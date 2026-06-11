@@ -1,0 +1,25 @@
+# kube-prometheus-stack values for the dojo — small and honest.
+grafana:
+  adminPassword: dojo-admin
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      url: http://loki:3100
+      access: proxy
+prometheus:
+  prometheusSpec:
+    retention: 2d
+    # scrape everything with prometheus.io/* annotations (Online Boutique exposes some)
+    additionalScrapeConfigs:
+      - job_name: kubernetes-pods
+        kubernetes_sd_configs: [{ role: pod }]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: "true"
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+alertmanager:
+  enabled: true

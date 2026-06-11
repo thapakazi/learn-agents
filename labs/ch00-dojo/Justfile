@@ -1,0 +1,66 @@
+# Ch0 — The Dojo. Build the lab.
+set shell := ["bash", "-cu"]
+
+cluster_name := "srebudo"
+shop_manifest := "https://raw.githubusercontent.com/GoogleCloudPlatform/microservices-demo/v0.10.2/release/kubernetes-manifests.yaml"
+
+default:
+    @just --list
+
+# Bring up everything: cluster + shop + observability + models
+up: cluster shop observability models smoke
+    @echo "🥋 The dojo is open."
+
+# 1. kind cluster (1 control-plane, 2 workers)
+cluster:
+    kind get clusters | grep -qx {{cluster_name}} || kind create cluster --config kind-config.yaml
+    kubectl cluster-info --context kind-{{cluster_name}}
+
+# 2. Online Boutique — 12 services + load generator, namespace `shop`
+shop:
+    kubectl get ns shop >/dev/null 2>&1 || kubectl create ns shop
+    kubectl -n shop apply -f {{shop_manifest}}
+    kubectl -n shop rollout status deploy/frontend --timeout=300s
+    @echo "🛒 Shop is taking traffic (loadgenerator is live)."
+
+# 3. Prometheus + Grafana + Loki, namespace `monitoring`
+observability:
+    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts >/dev/null
+    helm repo add grafana https://grafana.github.io/helm-charts >/dev/null
+    helm repo update >/dev/null
+    kubectl get ns monitoring >/dev/null 2>&1 || kubectl create ns monitoring
+    helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
+        -n monitoring -f prometheus-values.yaml --wait --timeout 10m
+    helm upgrade --install loki grafana/loki-stack \
+        -n monitoring --set promtail.enabled=true --wait --timeout 10m
+    @echo "👁  Observability up. Grafana: just grafana"
+
+# 4. Pull local models (tool-calling capable)
+models:
+    ollama pull qwen2.5:14b
+    ollama pull llama3.1:8b
+
+# 5. Prove the local model can call tools — DO NOT skip
+smoke:
+    python3 smoke_test.py
+
+# Port-forwards
+grafana:
+    @echo "http://localhost:3000  (admin / dojo-admin)"
+    kubectl -n monitoring port-forward svc/monitoring-grafana 3000:80
+
+frontend:
+    @echo "http://localhost:8080"
+    kubectl -n shop port-forward svc/frontend 8080:80
+
+prometheus:
+    @echo "http://localhost:9090"
+    kubectl -n monitoring port-forward svc/monitoring-kube-prometheus-prometheus 9090:9090
+
+loki:
+    @echo "http://localhost:3100"
+    kubectl -n monitoring port-forward svc/loki 3100:3100
+
+# Tear it all down
+down:
+    kind delete cluster --name {{cluster_name}}

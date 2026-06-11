@@ -1,0 +1,24 @@
+# Ch1 — The Naked Loop
+set shell := ["bash", "-cu"]
+
+default:
+    @just --list
+
+# Inject the failure: checkout loses DNS via a "hardening" netpol
+break:
+    kubectl apply -f chaos/dns-blackhole.yaml
+    @echo "💥 chaos applied. Give it ~60s, then watch checkout errors appear."
+
+# Run YOUR agent against the broken shop (uses the live tree in ../../budo)
+demo:
+    cd ../../budo && PYTHONPATH=. python3 -m budo logs \
+      "Users report checkout is failing in the shop namespace. Find the root cause."
+
+# Restore peace
+heal:
+    kubectl -n shop delete networkpolicy checkout-egress-lockdown --ignore-not-found
+
+# The break-it exercise: flood the context (see chapter)
+flood:
+    kubectl -n shop logs deploy/loadgenerator --tail=-1 | head -c 400000 > /tmp/flood.log
+    @echo "wrote /tmp/flood.log — now try feeding an agent 400KB and watch it drown"

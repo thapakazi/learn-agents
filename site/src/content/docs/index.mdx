@@ -1,0 +1,54 @@
+---
+title: srebudo.ai
+description: The way of the SRE agent. Build real agents against a real cluster, one belt at a time.
+template: splash
+hero:
+  tagline: An old sensei. A broken cluster. Ten chapters. You leave with an agent CLI you built yourself — and the scars to prove it works.
+  actions:
+    - text: Enter the dojo
+      link: /ch00-dojo/
+      icon: right-arrow
+    - text: Read the Way of Budo
+      link: /manifesto/
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+> *A young engineer asks: "Sensei, which framework should I learn?"*
+>
+> *Budo replies: "First, write the loop. The framework is what remains when you understand why you no longer want to write the loop."*
+
+## What this is
+
+A hands-on course for experienced SREs. Every chapter you build **one real agent** against a **real running system** — a kind cluster running a 12-service shop with real metrics, real logs, and failures injected by us. Every agent becomes a subcommand of one evolving CLI: **`budo`**. By the black belt, `budo` is an interactive terminal agent in the spirit of opencode and Claude Code — running on a **local model**.
+
+<CardGrid stagger>
+  <Card title="Local-first" icon="laptop">
+    kind + Ollama. Your laptop is the production environment we operate — and break. Cloud is opt-in.
+  </Card>
+  <Card title="From scratch, then SDK" icon="seti:python">
+    Ch1–4: raw loop, no frameworks. Ch5+: migrate to the Claude Agent SDK and feel exactly what it buys you.
+  </Card>
+  <Card title="Real failure classes" icon="warning">
+    DNS netpols, flaky tests, noisy neighbors, IAM drift, prompt injection in your own logs, runaway bills.
+  </Card>
+  <Card title="Break it, harden it" icon="approve-check">
+    Every chapter ends with an attack on the agent you just built. The fix is the lesson.
+  </Card>
+</CardGrid>
+
+## The belts
+
+| Belt | Chapter | The agent | `budo` gains |
+|---|---|---|---|
+| — | Ch0 The Dojo | the lab itself | `just lab-up` |
+| ⬜ | Ch1 The Naked Loop | log triage, zero frameworks | `budo logs` |
+| 🟨 | Ch2 IaC | Terraform plan reviewer | `budo plan-review` |
+| 🟧 | Ch3 CI/CD | pipeline failure root-causer | `budo ci` |
+| 🟩 | Ch4 Observability | the PromQL whisperer | `budo why` |
+| 🟦 | Ch5 Oncall | incident copilot | `budo oncall` + REPL |
+| 🟪 | Ch6 Scale | capacity planner that opens PRs | `budo capacity` |
+| 🟫 | Ch7 Cost | FinOps agent (AWS) | `budo cost` |
+| 🟥 | Ch8 Security | security agent + agent security | `budo sec` |
+| ⬛ | Ch9 Capstone | the orchestrated agent team, full TUI | `budo` v1.0 |

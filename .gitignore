@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.astro/
+__pycache__/
+*.pyc
+.venv/
+.env
+.terraform/
+*.tfstate*
+.DS_Store

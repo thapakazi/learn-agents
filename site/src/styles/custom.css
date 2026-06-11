@@ -1,0 +1,43 @@
+/* srebudo.ai — sumi ink on washi paper. Quiet, disciplined, one red seal. */
+:root {
+  --sl-font: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  --sl-font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, monospace;
+  --sl-color-accent-low: #f3e3df;
+  --sl-color-accent: #a43a2a;        /* the hanko seal red — used sparingly */
+  --sl-color-accent-high: #6e2418;
+  --sl-color-white: #1b1917;          /* sumi ink */
+  --sl-color-gray-1: #2e2a27;
+  --sl-color-gray-2: #4a443f;
+  --sl-color-gray-3: #6f6760;
+  --sl-color-gray-4: #a39a90;
+  --sl-color-gray-5: #d8d1c7;
+  --sl-color-gray-6: #efeae0;
+  --sl-color-black: #faf6ec;          /* washi */
+}
+:root[data-theme='dark'] {
+  --sl-color-accent-low: #3a1812;
+  --sl-color-accent: #d4604c;
+  --sl-color-accent-high: #f0b3a8;
+  --sl-color-white: #f0ebe1;
+  --sl-color-gray-1: #ddd6ca;
+  --sl-color-gray-2: #b6aea2;
+  --sl-color-gray-3: #8a8276;
+  --sl-color-gray-4: #5a544c;
+  --sl-color-gray-5: #34302b;
+  --sl-color-gray-6: #221f1c;
+  --sl-color-black: #161412;
+}
+.sl-markdown-content h1, .sl-markdown-content h2 { letter-spacing: -0.015em; }
+.sl-markdown-content h2 {
+  border-bottom: 1px solid var(--sl-color-gray-5);
+  padding-bottom: 0.3rem;
+}
+/* Budo's koans */
+.sl-markdown-content blockquote {
+  border-inline-start: 3px solid var(--sl-color-accent);
+  background: var(--sl-color-gray-6);
+  font-style: italic;
+  padding: 0.75rem 1rem;
+  border-radius: 0 4px 4px 0;
+}
+.sl-markdown-content code { font-size: 0.92em; }
