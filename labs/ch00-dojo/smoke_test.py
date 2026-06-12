@@ -8,6 +8,7 @@ available. Asserts the model (a) calls the tool, (b) with valid JSON args,
 Env:
   OPENAI_BASE_URL  default http://localhost:11434/v1  (Ollama)
   BUDO_MODEL       default qwen2.5:14b
+  BUDO_DEBUG       1/true to print request, response, tool I/O (or pass --debug/-d)
 """
 import json
 import os
@@ -17,6 +18,18 @@ import urllib.request
 
 BASE = os.environ.get("OPENAI_BASE_URL", "http://localhost:11434/v1")
 MODEL = os.environ.get("BUDO_MODEL", "qwen2.5:14b")
+DEBUG = os.environ.get("BUDO_DEBUG", "").lower() in ("1", "true", "yes")
+
+
+def dbg(label: str, payload) -> None:
+    if not DEBUG:
+        return
+    bar = "─" * 8
+    print(f"\n{bar} {label} {bar}")
+    if isinstance(payload, (dict, list)):
+        print(json.dumps(payload, indent=2, default=str))
+    else:
+        print(payload)
 
 TOOLS = [{
     "type": "function",
@@ -36,6 +49,7 @@ def chat(messages, tools=None):
     body = {"model": MODEL, "messages": messages, "temperature": 0}
     if tools:
         body["tools"] = tools
+    dbg(f"POST {BASE}/chat/completions", body)
     req = urllib.request.Request(
         f"{BASE}/chat/completions",
         data=json.dumps(body).encode(),
@@ -43,14 +57,20 @@ def chat(messages, tools=None):
                  "Authorization": f"Bearer {os.environ.get('OPENAI_API_KEY', 'ollama')}"},
     )
     with urllib.request.urlopen(req, timeout=300) as r:
-        return json.loads(r.read())["choices"][0]["message"]
+        raw = json.loads(r.read())
+    dbg("response (raw)", raw)
+    msg = raw["choices"][0]["message"]
+    dbg("response.message", msg)
+    return msg
 
 
 def kubectl_get_pods(namespace: str) -> str:
-    out = subprocess.run(
-        ["kubectl", "-n", namespace, "get", "pods", "--no-headers"],
-        capture_output=True, text=True, timeout=30,
-    )
+    cmd = ["kubectl", "-n", namespace, "get", "pods", "--no-headers"]
+    dbg("exec", " ".join(cmd))
+    out = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    dbg("exec.stdout", out.stdout)
+    if out.stderr:
+        dbg("exec.stderr", out.stderr)
     return out.stdout or out.stderr
 
 
@@ -93,4 +113,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    if any(a in ("-d", "--debug") for a in sys.argv[1:]):
+        DEBUG = True
+    if DEBUG:
+        print(f"[debug] BASE={BASE}  MODEL={MODEL}")
     sys.exit(main())

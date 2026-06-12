@@ -2,11 +2,13 @@
 the only mutating tool (delete_pod) exists to teach the approval gate."""
 from __future__ import annotations
 
+import re
 import subprocess
 
 from budo.core.loop import Tool
 
 DEFAULT_TAIL = 200  # context is a budget; spend it deliberately
+SINCE_RE = re.compile(r"^\d+(s|m|h)$")  # 30s, 5m, 2h — kubectl --since format
 
 
 def _run(args: list[str]) -> str:
@@ -27,13 +29,29 @@ def describe(namespace: str, kind: str, name: str) -> str:
 
 
 def logs(namespace: str, pod: str, container: str = "", tail: int = DEFAULT_TAIL,
-         previous: bool = False) -> str:
+         previous: bool = False, since: str = "", grep: str = "") -> str:
     args = ["-n", namespace, "logs", pod, f"--tail={min(int(tail), 1000)}"]
     if container:
         args += ["-c", container]
     if previous:
         args.append("--previous")
-    return _run(args)
+    if since:
+        if not SINCE_RE.match(since):
+            return f"error: 'since' must look like '30s', '5m', '2h' (got {since!r})"
+        args.append(f"--since={since}")
+    raw = _run(args)
+    if not grep:
+        return raw
+    try:
+        pat = re.compile(grep, re.IGNORECASE)
+    except re.error as e:
+        return f"error: invalid grep regex {grep!r}: {e}"
+    lines = raw.splitlines()
+    matched = [ln for ln in lines if pat.search(ln)]
+    if not matched:
+        return f"(no lines matched grep={grep!r} in {len(lines)} lines; widen grep or drop it)"
+    head = f"# matched {len(matched)} of {len(lines)} lines (grep={grep!r})"
+    return "\n".join([head, *matched])
 
 
 def delete_pod(namespace: str, pod: str) -> str:
@@ -54,12 +72,19 @@ K8S_TOOLS: list[Tool] = [
          {"type": "object", "properties": {**_ns_param(),
           "kind": {"type": "string"}, "name": {"type": "string"}},
           "required": ["namespace", "kind", "name"]}, describe),
-    Tool("logs", "Tail logs of a pod. Use small tails first (50-200); drill down, don't dump.",
+    Tool("logs", "Tail logs of a pod. Use small tails first (50-200); drill down, don't dump. "
+         "For noisy services (frontend, loadgenerator) FILTER: set grep='error|rpc' and since='2m' "
+         "to extract signal. If grep returns nothing, widen the pattern or drop it.",
          {"type": "object", "properties": {**_ns_param(),
           "pod": {"type": "string"},
           "container": {"type": "string", "description": "optional container name"},
           "tail": {"type": "integer", "description": "lines, default 200, max 1000"},
-          "previous": {"type": "boolean", "description": "previous container instance (after crash)"}},
+          "previous": {"type": "boolean", "description": "previous container instance (after crash)"},
+          "since": {"type": "string",
+           "description": "only logs newer than this duration: '30s', '5m', '2h'. Use to zoom on a time window."},
+          "grep": {"type": "string",
+           "description": "case-insensitive regex filter applied server-side after fetch. "
+                          "Examples: 'error', 'rpc error', 'error|fail|timeout'. Cuts noise dramatically."}},
           "required": ["namespace", "pod"]}, logs),
     Tool("delete_pod", "Delete a pod (it will be recreated by its controller). MUTATING.",
          {"type": "object", "properties": {**_ns_param(), "pod": {"type": "string"}},

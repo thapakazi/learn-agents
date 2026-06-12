@@ -4,19 +4,25 @@ set shell := ["bash", "-cu"]
 default:
     @just --list
 
-# Inject the failure: checkout loses DNS via a "hardening" netpol
+# Inject the failure: a typo'd PAYMENT_SERVICE_ADDR on checkoutservice
 break:
-    kubectl apply -f chaos/dns-blackhole.yaml
-    @echo "💥 chaos applied. Give it ~60s, then watch checkout errors appear."
+    ./chaos/checkout-bad-env.sh
+    kubectl -n shop rollout status deploy/checkoutservice --timeout=90s
 
 # Run YOUR agent against the broken shop (uses the live tree in ../../budo)
 demo:
-    cd ../../budo && PYTHONPATH=. python3 -m budo logs \
+    cd ../../budo && export BUDO_DEBUG=1 && PYTHONPATH=. python3 -m budo logs \
+      "Users report checkout is failing in the shop namespace. Find the root cause."
+
+# Same demo, but dial the verbosity: quiet | info | debug | trace
+demo-at level="info":
+    cd ../../budo && PYTHONPATH=. python3 -m budo --log-level {{level}} logs \
       "Users report checkout is failing in the shop namespace. Find the root cause."
 
 # Restore peace
 heal:
-    kubectl -n shop delete networkpolicy checkout-egress-lockdown --ignore-not-found
+    kubectl -n shop set env deployment/checkoutservice PAYMENT_SERVICE_ADDR=paymentservice:50051
+    kubectl -n shop rollout status deploy/checkoutservice --timeout=90s
 
 # The break-it exercise: flood the context (see chapter)
 flood:

@@ -42,7 +42,7 @@ models:
 
 # 5. Prove the local model can call tools — DO NOT skip
 smoke:
-    python3 smoke_test.py
+    python3 smoke_test.py --debug
 
 # Port-forwards
 grafana:

@@ -11,6 +11,7 @@ import json
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
+from . import log
 from .audit import Audit
 from .provider import chat, parse_tool_args
 
@@ -46,20 +47,28 @@ class Agent:
         self.messages.append({"role": "user", "content": user_msg})
         self.audit.log("user", content=user_msg)
 
-        for _ in range(MAX_TURNS):
+        for turn in range(1, MAX_TURNS + 1):
+            log.debug(f"turn {turn}: → chat ({len(self.messages)} msgs, {len(specs)} tools)")
+            log.trace(f"turn {turn} request", {"messages": self.messages})
             msg = chat(self.messages, specs)
+            log.trace(f"turn {turn} response", msg)
             self.messages.append(msg)
             calls = msg.get("tool_calls") or []
             if not calls:
                 answer = msg.get("content") or ""
                 self.audit.log("answer", content=answer)
+                log.debug(f"turn {turn}: ← final answer ({len(answer)} chars)")
                 return answer
 
+            log.debug(f"turn {turn}: ← {len(calls)} tool call(s)")
             for call in calls:
                 name = call["function"]["name"]
-                result = self._execute(toolmap, name, call["function"]["arguments"])
-                self.audit.log("tool", name=name, args=call["function"]["arguments"],
-                               result=result[:2000])
+                raw_args = call["function"]["arguments"]
+                log.info(f"tool → {name}({log.preview(raw_args, 120)})")
+                result = self._execute(toolmap, name, raw_args)
+                log.debug(f"tool ← {name}: {log.preview(result)}")
+                log.trace(f"tool {name} full result", result)
+                self.audit.log("tool", name=name, args=raw_args, result=result[:2000])
                 self.messages.append(
                     {"role": "tool", "tool_call_id": call["id"], "content": result})
 

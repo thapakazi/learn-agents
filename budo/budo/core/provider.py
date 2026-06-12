@@ -12,6 +12,8 @@ from typing import Any
 
 import httpx
 
+from . import log
+
 BASE_URL = os.environ.get("OPENAI_BASE_URL", "http://localhost:11434/v1")
 MODEL = os.environ.get("BUDO_MODEL", "qwen2.5:14b")
 API_KEY = os.environ.get("OPENAI_API_KEY", "ollama")
@@ -23,6 +25,7 @@ def chat(messages: list[dict[str, Any]], tools: list[dict] | None = None,
     body: dict[str, Any] = {"model": MODEL, "messages": messages, "temperature": temperature}
     if tools:
         body["tools"] = tools
+    log.trace(f"POST {BASE_URL}/chat/completions", body)
     r = httpx.post(
         f"{BASE_URL}/chat/completions",
         json=body,
@@ -30,7 +33,9 @@ def chat(messages: list[dict[str, Any]], tools: list[dict] | None = None,
         timeout=300,
     )
     r.raise_for_status()
-    return r.json()["choices"][0]["message"]
+    raw = r.json()
+    log.trace("raw response", raw)
+    return raw["choices"][0]["message"]
 
 
 def parse_tool_args(raw: str) -> dict[str, Any]:
