@@ -17,7 +17,7 @@ You cannot evaluate a framework for a job you have never done by hand. Chapters 
 
 ## 3. Real failures only
 
-Every scenario in this course is a failure class with a postmortem somewhere behind it: a NetworkPolicy that eats DNS, a test that is flaky because of a port collision, latency injected two hops downstream of where it surfaces, an instance family nobody remembers resizing. No toy weather-API agents. The lab gives you a 12-service shop with real traffic so failures present the way they present at work: as symptoms, far from causes.
+Every scenario in this course is a failure class with a postmortem somewhere behind it: a typo'd env var that quietly breaks one call path, a test that is flaky because of a port collision, latency injected two hops downstream of where it surfaces, an instance family nobody remembers resizing. No toy weather-API agents. The lab gives you a 12-service shop with real traffic so failures present the way they present at work: as symptoms, far from causes.
 
 ## 4. Break it, then harden it
 

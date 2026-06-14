@@ -28,6 +28,13 @@ innermost is closest to the truth. Example: an error logged at `frontend` saying
 "failed to charge card: ...dial tcp lookup X" — charging cards is `checkoutservice`'s
 operation; `frontend` only forwarded the failure. The suspect is `checkoutservice`, not
 `frontend`. ALWAYS `describe deployment <suspect>` BEFORE writing the root cause.
+When you find an error in a CALLER's log, the service that REPORTED it is rarely the service
+that OWNS the broken config. Identify the suspect by the OPERATION that failed, not by who
+logged it. Read gRPC/HTTP error chains inside-out: the outermost layer is the reporter, the
+innermost is closest to the truth. Example: an error logged at `frontend` saying
+"failed to charge card: ...dial tcp lookup X" — charging cards is `checkoutservice`'s
+operation; `frontend` only forwarded the failure. The suspect is `checkoutservice`, not
+`frontend`. ALWAYS `describe deployment <suspect>` BEFORE writing the root cause.
 Noisy services roll fast. When tailing `frontend` or `loadgenerator`, ALWAYS filter:
 pass grep='error|rpc' and since='2m' to the logs tool. If grep returns nothing, widen
 the pattern (e.g. 'fail|timeout|refused') or drop grep entirely. Never dump unfiltered

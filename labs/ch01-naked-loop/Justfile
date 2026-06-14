@@ -19,6 +19,12 @@ demo-at level="info":
     cd ../../budo && PYTHONPATH=. python3 -m budo --log-level {{level}} logs \
       "Users report checkout is failing in the shop namespace. Find the root cause."
 
+# Ask budo a custom question. Usage: just ask "why is X failing?" [level]
+#   just ask "investigate cartservice"
+#   just ask "investigate cartservice" debug
+ask question level="info":
+    cd ../../budo && PYTHONPATH=. python3 -m budo --log-level {{level}} logs "{{question}}"
+
 # Restore peace
 heal:
     kubectl -n shop set env deployment/checkoutservice PAYMENT_SERVICE_ADDR=paymentservice:50051

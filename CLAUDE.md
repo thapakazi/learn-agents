@@ -62,6 +62,32 @@ if > ~600 lines) plus `labs/chNN-slug/`:
       following the template above. When authoring a chapter: write the lab code FIRST, run it,
       then write the prose around what actually ran.
 
+## Known limits & next iteration
+
+The Ch1 agent works on the env-typo chaos and the call-graph reasoning rule, but the prompt is the
+only place heuristics live. Live-fire test on the belt-test challenge
+(`kubectl -n shop set image deploy/cartservice server=redis:alpine`) showed the limit clearly:
+the model saw `Image: redis:alpine` on a service literally named `cartservice` four times in
+`describe` output and still didn't flag it. Adding "check the Image" as another LOGS_SYSTEM rule
+works once or twice, but every new failure class adds a paragraph — and 14B-model attention on a
+long prompt softens fast.
+
+The scalable fix has two axes, parked for the chapters that own them:
+
+1. **Tools encode invariants, prompts encode strategy.** Enrich `describe` (and friends) to return
+   a `⚠️ findings:` digest: image-vs-expected-pattern mismatch, restart bursts, exit-code
+   interpretation. The model doesn't need a rule to "remember to check the image" — the tool
+   surfaces it. Heuristics in code are deterministic and testable. **Land this in Ch2 alongside
+   the skills work.**
+2. **Skills / playbooks pattern.** Per-failure-class markdown files (`playbooks/wrong-image.md`,
+   `playbooks/env-typo.md`, ...) loaded on demand via a `load_playbook(name)` tool. System prompt
+   shrinks to "if the symptom suggests class X, load `playbooks/X.md`." This is **Ch2's
+   centerpiece** — the lesson is exactly "your prompt isn't a scrapbook; it's a router."
+
+Multi-agent triage (specialist sub-agents) is the right answer for Ch5+ on the SDK; don't reach
+for it in Ch2–4. The progression is: feel the prompt ceiling (Ch1) → invariants in tools +
+skills (Ch2) → context budgets and gates (Ch3–4) → SDK + sub-agents (Ch5+).
+
 ## Definition of done for a chapter
 
 - `just -f labs/chNN-*/Justfile demo` runs the happy path end to end on a fresh lab.
