@@ -1,5 +1,13 @@
-"""Kubernetes read tools for the white belt. Read-only by design —
-the only mutating tool (delete_pod) exists to teach the approval gate."""
+"""Kubernetes tools for the white belt. You write most of this.
+
+`get_pods` is the worked example — read it, then mirror its shape for the others.
+Tool schemas at the bottom of the file are provided (they're prose, not programming).
+
+Read-only by design. The only mutating tool (`delete_pod`) exists to teach the
+approval gate in the loop — the flag is the lesson, not the function body.
+
+Stuck? Full reference at labs/ch01-naked-loop/starter/k8s_hint.py.
+"""
 from __future__ import annotations
 
 import re
@@ -12,53 +20,56 @@ SINCE_RE = re.compile(r"^\d+(s|m|h)$")  # 30s, 5m, 2h — kubectl --since format
 
 
 def _run(args: list[str]) -> str:
+    """Thin subprocess wrapper around kubectl. Provided — you don't touch it."""
     out = subprocess.run(["kubectl", *args], capture_output=True, text=True, timeout=60)
     return (out.stdout + out.stderr).strip() or "(no output)"
 
 
+# ─── worked example ───────────────────────────────────────────────────
+# Read this carefully. Every other tool below mirrors this shape:
+#   1. A Python function that does the work and returns a string.
+#   2. An entry in K8S_TOOLS (further down) pairing the function with a JSON schema.
 def get_pods(namespace: str) -> str:
     return _run(["-n", namespace, "get", "pods", "-o", "wide", "--no-headers"])
 
 
+# ─── you write these ──────────────────────────────────────────────────
 def get_events(namespace: str) -> str:
-    return _run(["-n", namespace, "get", "events", "--sort-by=.lastTimestamp"])
+    # TODO(you): kubectl get events -n <namespace> --sort-by=.lastTimestamp
+    raise NotImplementedError("write get_events() — Ch1 step 5")
 
 
 def describe(namespace: str, kind: str, name: str) -> str:
-    return _run(["-n", namespace, "describe", kind, name])
+    # TODO(you): kubectl describe <kind> <name> -n <namespace>
+    raise NotImplementedError("write describe() — Ch1 step 5")
+
+
+def delete_pod(namespace: str, pod: str) -> str:
+    """MUTATING — gated by the approval callback in the loop. The flag is the lesson."""
+    # TODO(you): kubectl delete pod <pod> -n <namespace>
+    raise NotImplementedError("write delete_pod() — Ch1 step 5")
 
 
 def logs(namespace: str, pod: str, container: str = "", tail: int = DEFAULT_TAIL,
          previous: bool = False, since: str = "", grep: str = "") -> str:
-    args = ["-n", namespace, "logs", pod, f"--tail={min(int(tail), 1000)}"]
-    if container:
-        args += ["-c", container]
-    if previous:
-        args.append("--previous")
-    if since:
-        if not SINCE_RE.match(since):
-            return f"error: 'since' must look like '30s', '5m', '2h' (got {since!r})"
-        args.append(f"--since={since}")
-    raw = _run(args)
-    if not grep:
-        return raw
-    try:
-        pat = re.compile(grep, re.IGNORECASE)
-    except re.error as e:
-        return f"error: invalid grep regex {grep!r}: {e}"
-    lines = raw.splitlines()
-    matched = [ln for ln in lines if pat.search(ln)]
-    if not matched:
-        return f"(no lines matched grep={grep!r} in {len(lines)} lines; widen grep or drop it)"
-    head = f"# matched {len(matched)} of {len(lines)} lines (grep={grep!r})"
-    return "\n".join([head, *matched])
+    """Tail logs from a pod, with hard caps and an optional server-side grep."""
+    # TODO(you): the dangerous one. Steps:
+    #   1. base args: ["-n", namespace, "logs", pod, f"--tail={min(int(tail), 1000)}"]
+    #      The min(..., 1000) is non-negotiable — context flooding is the #1 way agents die.
+    #   2. optional flags: container (-c), previous (--previous), since (--since=<dur>)
+    #   3. VALIDATE since against SINCE_RE first. If bad, return a clean error string —
+    #      do not raise. The loop turns raised exceptions into errors too, but a clean
+    #      message is a better prompt for the model.
+    #   4. run _run(args), capture the raw output
+    #   5. if grep is empty: return raw
+    #   6. else: compile re.compile(grep, re.IGNORECASE) (return clean error on re.error),
+    #      filter lines, return matched lines with a one-line header like
+    #      "# matched N of M lines (grep=...)". If 0 matched, say so explicitly so the
+    #      model knows to widen the pattern.
+    raise NotImplementedError("write logs() — Ch1 step 6")
 
 
-def delete_pod(namespace: str, pod: str) -> str:
-    """MUTATING — gated by the approval callback in the loop."""
-    return _run(["-n", namespace, "delete", "pod", pod])
-
-
+# ─── tool specs (provided — the descriptions ARE prompts the model reads) ───
 def _ns_param():
     return {"namespace": {"type": "string", "description": "kubernetes namespace, e.g. 'shop'"}}
 

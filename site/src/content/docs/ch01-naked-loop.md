@@ -9,8 +9,8 @@ You'll build a log-triage agent from scratch — no frameworks, no SDKs — and 
 
 By the end you'll have:
 
-- Written your own **agent loop** (the thing every framework hides from you).
-- Wired a local model (Ollama) to **tools** that run `kubectl`.
+- Written your own **kubectl tools** — the surface that makes the LLM an *agent*, not a chatbot.
+- Written your own **agent loop** — the engine that drives those tools.
 - Handled **tool errors** by feeding them back to the model instead of crashing.
 - Built an **approval gate** for any tool that changes state.
 - Logged a full **audit trail** of every call.
@@ -104,27 +104,35 @@ Three rules you'll write today and keep forever:
 
 ## Build
 
-> **Heads up.** Most of `budo/` is already wired for you — the HTTP client, the kubectl tools, the CLI, the system prompt. **You write the loop.** That's the white belt lesson.
+> **Heads up.** In the [Warm-up](/warmup-llm-client/) you built the HTTP client — `chat()` and `parse_tool_args()`. **Today you build the tools and the loop that drives them.** The CLI and the system prompt are already wired; one tool is a worked example and the schemas for the rest are filled in.
 >
-> Everything else is scaffolding so you can focus on the one thing that matters today: making the model and your tools talk to each other in a controlled loop.
+> Skipped the warm-up? No problem — the equivalent `provider.py` is already in the tree. Ch1 runs the same either way.
 >
-> Want to write the HTTP client yourself too? Take the optional [Warm-up — Talking to a local LLM](/warmup-llm-client/) first. ~30 min. When done, drop your `provider.py` into the tree and Ch1 runs on top. If you skip it, the version already there is equivalent — either path works.
+> **Tools are what make an LLM an agent.** Without them, you have a chatbot with a context window.
 
-### Step 1 — Tour what's already done (5 min)
+### Step 1 — The pieces your loop will use
 
-Open these three files and read them. Don't write anything yet.
+Your loop is the only thing you write today. It calls into three pieces that already live in the tree:
 
-| File | What it does | Lines |
+| File | What your loop uses | Where it came from |
 |---|---|---|
-| `budo/budo/core/provider.py` | One function, `chat(messages, tools)`. Posts to `$OPENAI_BASE_URL/chat/completions`. Defaults to Ollama. Also has `parse_tool_args()` for the tolerant JSON parse. | ~50 |
-| `budo/budo/tools/k8s.py` | Five tools: `get_pods`, `get_events`, `describe`, `logs`, `delete_pod`. The `logs` tool's description string is the most important prompt in the file — read it. | ~90 |
-| `budo/budo/__main__.py` | The CLI (argparse → `budo logs "<question>"`) and the `LOGS_SYSTEM` prompt with the investigation rules. | ~80 |
+| `budo/budo/core/provider.py` | `chat(messages, tools)` and `parse_tool_args(raw)` | **You** — from the warm-up. Or the reference, if you skipped. |
+| `budo/budo/tools/k8s.py` | `K8S_TOOLS` — five `kubectl` tools. Schemas filled in; `get_pods` is a worked example; you write the rest in steps 3–6. | **You** + provided schemas |
+| `budo/budo/__main__.py` | `LOGS_SYSTEM` prompt, argparse wiring, and the human-approval callback | Provided |
 
-**Why they're prebuilt:** none of them teach you anything new. An HTTP client is an HTTP client. A `kubectl` wrapper is a `kubectl` wrapper. The loop is where every interesting decision lives — so the loop is what you write.
+Your `loop.py` will start with imports that make the relationship concrete:
 
-### Step 2 — Sanity check the provider
+```python
+from .provider import chat, parse_tool_args   # ← the warm-up's library
+from .audit import Audit                       # ← provided (JSONL trail)
+from . import log                              # ← provided (quiet/info/debug/trace)
+```
 
-Before touching anything, prove your local Ollama and the provider can talk:
+Treat `chat` and `parse_tool_args` as a tiny library you built yesterday. Today you write the boss that drives it.
+
+### Step 2 — Sanity check the lib
+
+Make sure your provider still talks to the model before you build a loop on top of it:
 
 ```bash
 cd budo && PYTHONPATH=. python3 -c "
@@ -132,25 +140,100 @@ from budo.core.provider import chat
 print(chat([{'role':'user','content':'Say hello in one short sentence.'}]))"
 ```
 
-If you see a sentence from the model, you're good. If not, fix Ollama before continuing — the loop won't save you here.
+A sentence comes back? Good — your lib works. If not, fix Ollama (or revisit your warm-up file) before continuing. The loop can't paper over a broken provider.
 
-### Step 3 — Move the reference loop aside
+### Step 3 — Tools: the muscle of an agent
 
-A working loop already sits at `budo/budo/core/loop.py`. **You're going to overwrite it with your own.** Move it aside first so you can compare later:
+An LLM by itself is a chatbot. Wrap it in a loop that lets it call functions, and the bot becomes an agent. Tools **are** those functions — the only way the model reaches out and touches the world.
 
-```bash
-cd /path/to/srebudo.ai
-mv budo/budo/core/loop.py budo/budo/core/loop.reference.py
-cp labs/ch01-naked-loop/starter/loop_skeleton.py budo/budo/core/loop.py
+RAG hands the model a context. **Tools hand it a steering wheel.**
+
+A tool is two pieces:
+
+1. A **Python function** that does the work and returns a string.
+2. A **JSON schema** that tells the model what the function is for and what arguments it takes.
+
+Both live in `budo/budo/tools/k8s.py`. The schemas at the bottom of the file are filled in (they're prose, not programming). `get_pods` is fully written as a worked example. You write the other four.
+
+### Step 4 — Read the worked example: `get_pods`
+
+Open `budo/budo/tools/k8s.py`. Find `get_pods`:
+
+```python
+def get_pods(namespace: str) -> str:
+    return _run(["-n", namespace, "get", "pods", "-o", "wide", "--no-headers"])
 ```
 
-Now `budo/core/loop.py` is the skeleton. The CLI, the tools, `just demo` — they all run **your** loop.
+Two lines. The whole pattern: call `_run()` (a thin `kubectl` wrapper, provided) with the right args, return the string.
 
-**Do not open `loop.reference.py` until your version runs.** Typing it yourself is the whole lesson.
+Now find its entry in `K8S_TOOLS` at the bottom of the file:
 
-### Step 4 — Read the contract
+```python
+Tool("get_pods", "List pods in a namespace with status, restarts, node.",
+     {"type": "object", "properties": _ns_param(), "required": ["namespace"]}, get_pods),
+```
 
-Open `budo/budo/core/loop.py` (the skeleton you just copied in). Two dataclasses are sketched, two methods are `NotImplementedError`:
+Three things to notice:
+
+| Field | What it is |
+|---|---|
+| `"get_pods"` | The name the model calls. |
+| `"List pods..."` description | This **is a prompt** the model reads. Write it like you'd brief a junior. |
+| `parameters` (JSON schema) | What arguments the model can pass. The model fills in `namespace`. |
+
+The function returns a string → the loop appends that string to `messages` → the model picks the next move. That's the whole dance.
+
+### Step 5 — Fill in the three simple tools
+
+Three tools, three one-liners. Same shape as `get_pods`. Replace the `NotImplementedError` in each:
+
+| Tool | kubectl command |
+|---|---|
+| `get_events` | `kubectl get events -n <namespace> --sort-by=.lastTimestamp` |
+| `describe` | `kubectl describe <kind> <name> -n <namespace>` |
+| `delete_pod` | `kubectl delete pod <pod> -n <namespace>` |
+
+`delete_pod` is already flagged `mutating=True` in `K8S_TOOLS`. **Do not** add gating logic inside the function. The flag is the contract; the gate lives in the loop.
+
+Test one of them standalone — no loop needed yet:
+
+```bash
+cd budo && PYTHONPATH=. python3 -c "
+from budo.tools.k8s import get_events
+print(get_events('shop'))"
+```
+
+You should see recent events.
+
+### Step 6 — Write `logs` — the one that needs care
+
+`logs` is the dangerous tool. Get it right and the agent can investigate anything. Get it wrong and one call floods the context and the model loses the plot.
+
+Five things `logs` must do:
+
+1. Build the `kubectl logs` command with a **hard tail cap at 1000** (default 200).
+2. Add optional flags: `container`, `previous`, `since`.
+3. **Validate `since`** against `SINCE_RE` (matches `30s`, `5m`, `2h`). If invalid, return a clean error string — don't raise.
+4. Run kubectl. Capture the raw output.
+5. If `grep` is set: compile a **case-insensitive** regex, filter lines, return matches with a one-line header. If nothing matched, say so explicitly — that's a signal for the model to widen.
+
+Why the caps matter: `frontend` rolls hundreds of debug lines per minute. An unfiltered 1000-line tail is 50KB of noise. `grep='error|rpc' since='2m'` cuts it to a handful. The agent will use these filters because the **tool description** tells it to. Read the description for `logs` in `K8S_TOOLS` — that's a prompt aimed at the model, not at you.
+
+Test directly:
+
+```bash
+PYTHONPATH=. python3 -c "
+from budo.tools.k8s import logs
+print(logs('shop', 'frontend-<replace-with-real-name>', tail=50, grep='error'))"
+```
+
+You should see only matching lines (or a clean "no match" message if none).
+
+Stuck? `labs/ch01-naked-loop/starter/k8s_hint.py` has the full reference.
+
+### Step 7 — Now the loop. Read its contract
+
+Open `budo/budo/core/loop.py`. Two dataclasses are sketched; two methods are `NotImplementedError`:
 
 ```python
 @dataclass
@@ -169,7 +252,8 @@ class Tool:
 class Agent:
     system: str
     tools: list[Tool]
-    approve: Callable[[str], bool]   # the mutating-tool gate
+    audit: Audit
+    approve: Callable[[str], bool]
     messages: list[dict] = ...
 
     def run(self, user_msg: str) -> str:
@@ -177,9 +261,9 @@ class Agent:
         ...
 ```
 
-That's all you implement today. Two methods.
+That's all you implement. Two methods. The tools you just wrote get passed in via `K8S_TOOLS` — the loop just iterates whatever tools it's given.
 
-### Step 5 — Write `Tool.spec()`
+### Step 8 — Write `Tool.spec()`
 
 Tiny first. `spec()` returns the OpenAI function-calling JSON the model expects:
 
@@ -197,7 +281,7 @@ def spec(self) -> dict:
 
 Done. Move on.
 
-### Step 6 — Write `Agent.run()` — the loop
+### Step 9 — Write `Agent.run()` — the loop
 
 The flow in plain English:
 
@@ -206,12 +290,12 @@ The flow in plain English:
    - Call `chat(messages, [t.spec() for t in self.tools])`.
    - Append the reply to `messages`.
    - **No tool calls?** Return the reply's content. Done.
-   - **Has tool calls?** Run each, append each result back to `messages`, continue.
+   - **Has tool calls?** Run each, append each result to `messages`, continue.
 3. Hit `MAX_TURNS` without an answer? Return a "truncated" message. Don't raise.
 
-Write it. Don't peek at the reference yet.
+Write it. Don't peek at the hint yet.
 
-### Step 7 — Handle the five messy cases
+### Step 10 — Handle the five messy cases
 
 Inside the tool-call loop, five things can go wrong. Decide what each becomes:
 
@@ -228,13 +312,13 @@ Two things to keep in mind while you write these:
 - **Every error goes back to the model as a tool result.** That's how it self-corrects. Crashing your Python process means a wasted run.
 - **The approval gate lives in the loop, not the tool.** A tool can't be trusted to gate itself.
 
-### Step 8 — Run it
+### Step 11 — Fight
 
 ```bash
 cd labs/ch01-naked-loop
 just break          # inject the typo'd PAYMENT_SERVICE_ADDR
 # wait ~30s for the rollout
-just demo           # your loop investigates (BUDO_DEBUG=1 — full trace)
+just demo           # your tools + your loop investigate (BUDO_DEBUG=1 — full trace)
 just demo-at debug  # turn the dial: quiet | info | debug | trace
 just heal           # restore the env var
 ```
@@ -258,15 +342,16 @@ Two common failure modes (both are the lesson, not bugs):
 - Agent stops at the frontend logs and blames the frontend.
 - Agent never filters `logs` and burns its context on debug noise.
 
-### Step 9 — Diff against the reference
+### Step 12 — Compare with the hints
 
-Now you may open `budo/budo/core/loop.reference.py`. Compare side-by-side with yours:
+Now you may open the hint files. Compare side-by-side:
 
 ```bash
-diff budo/budo/core/loop.py budo/budo/core/loop.reference.py
+diff budo/budo/core/loop.py  labs/ch01-naked-loop/starter/loop_hint.py
+diff budo/budo/tools/k8s.py  labs/ch01-naked-loop/starter/k8s_hint.py
 ```
 
-Find one thing the reference does that yours doesn't, or vice versa. Decide if you want to keep your choice. **Both can be right** — there's no single correct loop. The point of writing it yourself was to *own* every decision in it.
+Find one thing the hint does that yours doesn't (or vice versa). Keep your choice if you like it. There's no single correct loop or tool — the point of writing it yourself was to *own* every decision in it.
 
 ## Break it
 

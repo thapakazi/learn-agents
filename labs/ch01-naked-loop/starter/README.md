@@ -1,12 +1,15 @@
-# Ch1 starter
+# Ch1 starter — hints
 
-You write the loop. The skeleton below mirrors `budo/core/loop.py` with the engine removed.
-Copy it into `budo/core/loop.py` only if you get truly stuck — typing it is the lesson.
+You write the code directly in the live `budo/` tree:
 
-Files you will create/complete (in the live `budo/` tree at repo root):
-1. `budo/core/provider.py` — one function: `chat(messages, tools)` against any OpenAI-compatible endpoint
-2. `budo/core/loop.py`     — the agent loop (skeleton: `loop_skeleton.py` here)
-3. `budo/tools/k8s.py`     — read-only kubectl tools + ONE mutating tool to learn gating
-4. `budo/__main__.py`      — wire it into `budo logs "<question>"`
+- `budo/budo/core/loop.py` — skeleton with TODOs (`Tool.spec`, `Agent.run`)
+- `budo/budo/tools/k8s.py` — `get_pods` is the worked example; the rest are TODOs
 
-Order matters. Provider first (test it with a plain question), loop second, tools third.
+Two hint files live in this directory. **Open only when stuck.** Typing it
+yourself is the white-belt lesson.
+
+- `loop_hint.py` — full reference for the loop
+- `k8s_hint.py`  — full reference for the kubectl tools
+
+When your code runs `just demo` against the broken `shop` namespace cleanly, the
+white belt is yours.
