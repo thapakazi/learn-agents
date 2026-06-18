@@ -4,6 +4,13 @@ set shell := ["bash", "-cu"]
 default:
     @just --list
 
+# Copy the hint implementations into the live tree (for testing the demo without writing it yourself)
+use-hints:
+    cp starter/loop_hint.py ../../budo/budo/core/loop.py
+    cp starter/k8s_hint.py  ../../budo/budo/tools/k8s.py
+    @echo "✓ hints copied into budo/budo/{core/loop.py,tools/k8s.py}. Run 'just demo' to test."
+    @echo "  Reset to skeletons: git -C ../.. checkout -- budo/budo/core/loop.py budo/budo/tools/k8s.py"
+
 # Inject the failure: a typo'd PAYMENT_SERVICE_ADDR on checkoutservice
 break:
     ./chaos/checkout-bad-env.sh
