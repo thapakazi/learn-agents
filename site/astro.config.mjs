@@ -1,10 +1,15 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import mermaid from 'astro-mermaid';
 
 export default defineConfig({
   site: 'https://srebudo.ai',
   integrations: [
+    mermaid({
+      theme: 'forest',
+      autoTheme: true,
+    }),
     starlight({
       title: 'srebudo.ai',
       description:
@@ -19,6 +24,7 @@ export default defineConfig({
           label: 'Foundations',
           items: [
             { label: 'Ch0 — The Dojo (lab setup)', slug: 'ch00-dojo' },
+            { label: 'Warm-up — Talking to a local LLM', slug: 'warmup-llm-client' },
             { label: 'Ch1 — The Naked Loop ⬜', slug: 'ch01-naked-loop' },
           ],
         },

@@ -1,0 +1,22 @@
+# Warm-up — Talking to a local LLM
+set shell := ["bash", "-cu"]
+
+default:
+    @just --list
+
+# Hit Ollama directly with curl — prove the endpoint is up before debugging Python
+curl-test:
+    @echo "→ POST ${OPENAI_BASE_URL:-http://localhost:11434/v1}/chat/completions"
+    curl -sS "${OPENAI_BASE_URL:-http://localhost:11434/v1}/chat/completions" \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer ${OPENAI_API_KEY:-ollama}" \
+      -d '{"model":"'"${BUDO_MODEL:-qwen2.5:14b}"'","messages":[{"role":"user","content":"Say hi in one short sentence."}],"temperature":0}' \
+      | python3 -m json.tool
+
+# Run YOUR provider — expects a sentence back from the model
+test:
+    cd starter && python3 provider_skeleton.py
+
+# Exercise parse_tool_args on clean, single-quoted, and trailing-comma JSON
+parse-test:
+    cd starter && python3 parse_test.py
