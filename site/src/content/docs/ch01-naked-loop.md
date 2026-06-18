@@ -398,4 +398,6 @@ You just performed prompt injection on yourself. Remember this in Ch8.
 
 Multi-cluster auth. RBAC-scoped service accounts per agent (not your admin kubeconfig). Rate limits on tool calls. Structured (not prose) verdicts for downstream automation. Eval suites that replay historical incidents.
 
+And one limit you'll feel firsthand if your demo ever names the wrong suspect: **the system prompt is doing too much work.** Heuristics like *"identify the suspect by the failing operation"* live in prose, and a 14B model's attention softens on long prompts. The fix isn't a tighter rule — it's [Ch2](/ch02-iac/)'s centerpiece: enrich tools to surface findings (so the model doesn't have to *remember* to look for typos in env vars), and load per-failure-class playbooks on demand. Your prompt becomes a router, not a scrapbook.
+
 We get to most of these in later belts.
