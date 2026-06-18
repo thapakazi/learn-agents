@@ -342,6 +342,8 @@ Two common failure modes (both are the lesson, not bugs):
 - Agent stops at the frontend logs and blames the frontend.
 - Agent never filters `logs` and burns its context on debug noise.
 
+See a real run on this chaos: [@thapakazi_'s live trace](https://x.com/thapakazi_/status/2067496330235449587).
+
 ### Step 12 — Compare with the hints
 
 Now you may open the hint files. Compare side-by-side:
