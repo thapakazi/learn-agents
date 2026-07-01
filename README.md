@@ -3,7 +3,7 @@
 > *"A young engineer asks the master: 'Sensei, which framework should I learn?'*
 > *Budo replies: 'First, write the loop. The framework is what remains when you understand why you no longer want to write the loop.'"*
 
-**srebudo.ai** is a hands-on dojo for SREs who want to build AI agents that solve real platform problems — IaC review, CI/CD triage, observability investigations, oncall, capacity, cost, and security.
+**srebudo.ai** is a hands-on dojo for SREs who want to build AI agents that solve real platform problems — log triage, context engineering, CI/CD triage, observability investigations, oncall, capacity, cost, and security.
 
 You don't read about agents here. You **build one agent per chapter**, against a **real running system** (a kind cluster running a 12-service shop), and every agent you build becomes a skill of one evolving CLI: **`budo`** — which by the final chapter is a full interactive terminal agent in the spirit of opencode / Claude Code.
 
@@ -21,7 +21,7 @@ You don't read about agents here. You **build one agent per chapter**, against a
 |---|---|---|---|
 | — | [Ch0 — The Dojo](site/src/content/docs/ch00-dojo.md) | The lab: kind + shop + metrics + Ollama | `just lab-up` |
 | ⬜ White | Ch1 — The Naked Loop | Log-triage agent, zero frameworks | `budo logs` |
-| 🟨 Yellow | Ch2 — IaC | Terraform plan reviewer | `budo plan-review` |
+| 🟨 Yellow | Ch2 — Skills | Tool findings + skills as a router | `budo logs` (sharpened) |
 | 🟧 Orange | Ch3 — CI/CD | Pipeline failure root-causer | `budo ci` |
 | 🟩 Green | Ch4 — Observability | The PromQL whisperer | `budo why` |
 | 🟦 Blue | Ch5 — Oncall | Incident copilot (→ Claude Agent SDK) | `budo oncall`, interactive REPL |

@@ -31,7 +31,7 @@ export default defineConfig({
         {
           label: 'The Belts',
           items: [
-            { label: 'Ch2 — IaC 🟨', slug: 'ch02-iac' },
+            { label: 'Ch2 — Skills 🟨', slug: 'ch02-skills' },
             { label: 'Ch3 — CI/CD 🟧', slug: 'ch03-cicd' },
             { label: 'Ch4 — Observability 🟩', slug: 'ch04-observability' },
             { label: 'Ch5 — Oncall 🟦', slug: 'ch05-oncall' },
