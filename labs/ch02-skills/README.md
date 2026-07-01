@@ -2,22 +2,26 @@
 
 Unlike Ch1, this lab ships almost empty **on purpose**. Every chaos in Ch2 is a plain
 `kubectl` one-liner documented in the chapter, and everything else — the findings helpers,
-the skill loader, the skills themselves, even this lab's Justfile — is built by the learner.
+the skill loader, the skills themselves, the chaos recipes in this lab's Justfile — is
+built by the learner.
 
-What lands here as you work the chapter:
+What's here:
 
-- `skills/` — your version-controlled masters of `~/.budo/skills/*.md` (`env-typo.md`,
-  `crashloop.md`, plus the boss-fight skill you invent). The chapter's Step 5 side quest.
-- `Justfile` — the Step 10 side quest: `chaos-wrong-image`, `chaos-env-typo`,
-  `chaos-crashloop`, `chaos-mystery`, `heal`, `demo`. Rule of the dojo: chaos you can't
-  cleanly revert is chaos you shouldn't inject.
+- `checks/check.py` — the level checkpoints (`just ch2 check 1..4`). All offline: they
+  test the learner's findings/loader/router code against canned fixtures, no cluster or
+  model needed.
+- `Justfile` — ships with `check` and `ask`; the chaos/heal recipes are a chapter side
+  quest the learner fills in. Rule of the dojo: chaos you can't cleanly revert is chaos
+  you shouldn't inject.
+- `skills/` — appears when the learner does the version-your-skills side quest (masters
+  of `~/.budo/skills/*.md`: `env-typo.md`, `crashloop.md`, plus their belt-test skill).
 
 The chaos commands, for reference (inject / heal):
 
 | Scenario | Inject | Heal |
 |---|---|---|
 | wrong-image | `kubectl -n shop set image deploy/cartservice server=redis:alpine` | `kubectl -n shop rollout undo deploy/cartservice` |
-| env-typo | `just -f ../ch01-naked-loop/Justfile break` | `just -f ../ch01-naked-loop/Justfile heal` |
+| env-typo | `just ch1 break` | `just ch1 heal` |
 | crashloop | `kubectl -n shop set env deploy/frontend PRODUCT_CATALOG_SERVICE_ADDR-` | `kubectl -n shop set env deploy/frontend PRODUCT_CATALOG_SERVICE_ADDR=productcatalogservice:3550` |
 | mystery (no skill) | `kubectl -n shop scale deploy/paymentservice --replicas=0` | `kubectl -n shop scale deploy/paymentservice --replicas=1` |
 

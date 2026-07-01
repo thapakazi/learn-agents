@@ -1,0 +1,22 @@
+# Ch2 — Findings & Skills
+set shell := ["bash", "-cu"]
+
+default:
+    @just --list
+
+# Checkpoint for a level (1-4). All offline — no cluster, no model.
+check n:
+    @python3 checks/check.py {{n}}
+
+# Run YOUR agent against the shop (same live tree as Ch1)
+ask question level="info":
+    cd ../../budo && PYTHONPATH=. python3 -m budo --log-level {{level}} logs "{{question}}"
+
+# ─────────────────────────────────────────────────────────────────────
+# Side quest (chapter, level 5): add your chaos recipes below.
+# One inject + one heal per failure class — chaos you can't cleanly
+# revert is chaos you shouldn't inject. The commands are in the chapter
+# and in README.md. Suggested names:
+#   chaos-wrong-image / chaos-env-typo / chaos-crashloop / chaos-mystery
+#   heal-wrong-image  / heal-env-typo  / heal-crashloop  / heal-mystery
+# ─────────────────────────────────────────────────────────────────────

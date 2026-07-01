@@ -4,6 +4,10 @@ set shell := ["bash", "-cu"]
 default:
     @just --list
 
+# Checkpoint for a level: 0=bench (online), 1-4=levels (offline), 5=hardening bonus
+check n:
+    @python3 checks/check.py {{n}}
+
 # Copy the hint implementations into the live tree (for testing the demo without writing it yourself)
 use-hints:
     cp starter/loop_hint.py ../../budo/budo/core/loop.py
