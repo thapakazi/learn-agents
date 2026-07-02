@@ -166,7 +166,7 @@ def spec(self) -> dict:
 
 That try/except might look like defensive boilerplate. It isn't — it's a load-bearing wall. Four of your five tools don't exist yet, and the loop must run anyway. You'll see why in about ten minutes.
 
-Give it an honest attempt before opening the hint. Getting briefly stuck here is the chapter working as intended.
+Give it an honest attempt before opening the hint. If you find yourself stuck for a few minutes, stay stuck a little longer — this is the piece worth wrestling with.
 
 <details>
 <summary>🥋 Hint — pseudocode skeleton, if the shape won't come</summary>
@@ -404,7 +404,7 @@ logs
 describe
 ```
 
-Five moves, no wasted motion. Twelve unfiltered `logs` calls instead? That's context bleeding out. The two classic failure modes — stopping at frontend and blaming *it*, or never filtering and drowning — are both lessons, not bugs; you'll fix the architecture behind them in Ch2.
+Five moves, no wasted motion. Twelve unfiltered `logs` calls instead? That's context bleeding out. The two classic failure modes — stopping at frontend and blaming *it*, or never filtering and drowning — are normal for a 14B model, and they're architecture problems, not prompt problems. Ch2 goes after both.
 
 > 🥋 **Budo says:** an agent that names the wrong suspect fast is worse than an engineer who names the right one slow.
 
@@ -555,7 +555,7 @@ No new material — the test checks what you've built, plus one scenario you hav
 
   Wrong image on a service named `cartservice`. Same question as always — "cartservice is unhealthy, find the root cause" — and the agent must name the image. Afterwards: `kubectl -n shop rollout undo deploy/cartservice`.
 
-Pass all six and the white belt is yours. If the last one beats you — and on a 14B model it often will — that's not you failing the test. **It's the designed cliffhanger.** Read on.
+Pass all six and the white belt is yours. The last one may well beat you — on a 14B model it usually does. Take the belt anyway, and keep that losing trace somewhere safe: the next chapter opens with exactly that defeat.
 
 ## What production would additionally need
 
@@ -567,6 +567,6 @@ Your agent is real, but let's be clear-eyed about the distance between this loop
 - **Eval suites, not vibes.** You judged today's agent by watching it. Production changes get judged by replaying a corpus of historical incidents (your audit JSONL files are the seed of exactly that) and counting correct verdicts before and after. Prompt tweaks without evals are superstition.
 - **Real injection defense.** Delimiters were a courtesy. Production needs privilege separation — a reader that touches untrusted text but holds no tools, an executor that holds tools but never reads raw logs. That's Ch8's whole game.
 
-And one limit you'll feel firsthand if the wrong-image chaos beat you: **the system prompt is doing too much work.** Heuristics like *"identify the suspect by the failing operation"* live in prose, and a 14B model's attention softens across a long prompt. The model can stare at `Image: redis:alpine` on a deployment literally named `cartservice` — four times — and not flag it, because "remember to check the image" is buried in paragraph six. The fix isn't a tighter rule — it's [Ch2](/ch02-skills/)'s centerpiece: enrich tools to surface findings (so the model doesn't have to *remember* to look), and load per-failure-class skills on demand. Your prompt becomes a router, not a scrapbook.
+And one limit you'll feel firsthand if the wrong-image chaos beat you: **the system prompt is doing too much work.** Heuristics like *"identify the suspect by the failing operation"* live in prose, and a 14B model's attention softens across a long prompt. The model can stare at `Image: redis:alpine` on a deployment literally named `cartservice` — four times — and not flag it, because "remember to check the image" is buried in paragraph six. The fix isn't a tighter rule. It's what [Ch2](/ch02-skills/) is for: enrich tools to surface findings (so the model doesn't have to *remember* to look), and load per-failure-class skills on demand. Your prompt becomes a router, not a scrapbook.
 
 See you at the yellow belt.

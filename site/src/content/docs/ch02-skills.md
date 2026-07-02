@@ -33,7 +33,7 @@ Time: ~2 hours. Hardware: same as Ch1. **Prerequisite:** your Ch1 agent passes i
 
 ## The problem
 
-Ch1 left you with a working agent and a cliffhanger: a wrong-image deploy it stares straight through. The heuristics that crack the env-typo case live in `LOGS_SYSTEM` — thirty-five lines of hard-won prose. Add a "check the image matches the workload" rule and it works *once*. Add the next failure class and the rule above it softens. A 14B model's attention thins across a long prompt; **a prompt that knows everything reliably remembers nothing.**
+Ch1 left you with a working agent and one unsolved case: a wrong-image deploy it stares straight through. The heuristics that crack the env-typo case live in `LOGS_SYSTEM` — thirty-five lines of hard-won prose. Add a "check the image matches the workload" rule and it works *once*. Add the next failure class and the rule above it softens. A 14B model's attention thins across a long prompt; **a prompt that knows everything reliably remembers nothing.**
 
 This isn't a tighter-rule problem. It's an architecture problem, and it has a known solution — the same one every serious coding agent shipped in the last two years. Two moves:
 
@@ -174,7 +174,7 @@ just ch1 ask "cartservice is unhealthy in the shop namespace. Find the root caus
 ROOT CAUSE: deployment/cartservice is running image 'redis:alpine' instead of a cartservice image ...
 ```
 
-**Why that worked:** the model didn't get smarter and the prompt didn't change — the *evidence changed shape*. The describe output now ends with `⚠️ findings: image 'redis:alpine' does not match workload name 'cartservice'`, and a model that ignores a one-line warning at the bottom of a tool result is much rarer than a model that forgets rule #14 of a long prompt. Deterministic check, zero attention cost. That's *findings beat instructions* landing.
+**Why that worked:** the model didn't get smarter and the prompt didn't change — the *evidence changed shape*. The describe output now ends with `⚠️ findings: image 'redis:alpine' does not match workload name 'cartservice'`, and a model that ignores a one-line warning at the bottom of a tool result is much rarer than a model that forgets rule #14 of a long prompt. Deterministic check, zero attention cost — the tool now does the remembering.
 
 Heal: `kubectl -n shop rollout undo deploy/cartservice`.
 
@@ -233,7 +233,7 @@ just ch2 check 2
 LEVEL 2 CLEAR 🥋
 ```
 
-**Why this level exists:** findings are unit-testable *because they're code* — that's half the argument for moving checks out of the prompt, and you just felt it: you verified cluster-diagnosis logic in milliseconds, offline, with no model involved. Try unit-testing a prompt rule.
+**Why that matters:** findings are unit-testable *because they're code* — you just verified cluster-diagnosis logic in milliseconds, offline, with no model involved. Try unit-testing a prompt rule.
 
 ### The wall
 
@@ -297,7 +297,7 @@ Concrete triggers, a one-screen numbered procedure, an explicit verdict shape. R
 **Edit 2 — the loader.** Create `budo/budo/tools/skills.py`:
 
 ```python
-"""Skills: per-failure-class runbooks the model loads on demand. Ch2's centerpiece."""
+"""Skills: per-failure-class runbooks the model loads on demand."""
 from __future__ import annotations
 
 import re
@@ -393,7 +393,7 @@ w = len(LOGS_SYSTEM.split()); print(f'{w} words ≈ {int(w*1.3)} tokens, residen
 
 Around **600 tokens**, re-read by the model on every single turn (Ch1 wire fact #2), and every future failure class adds ~80 more — resident always, relevant almost never.
 
-**Edit — `budo/budo/__main__.py`.** Delete `LOGS_SYSTEM` (yes, the one you lovingly tuned in Ch1 — that's the lesson) and replace it:
+**Edit — `budo/budo/__main__.py`.** Delete `LOGS_SYSTEM` — yes, the one you lovingly tuned in Ch1. Its heuristics aren't dying, they're moving out; you already met them again inside `env-typo.md`. Replace it with:
 
 ```python
 LOGS_SYSTEM_BASE = """\
@@ -447,7 +447,7 @@ just ch2 check 4
 LEVEL 4 CLEAR 🥋
 ```
 
-Re-run the token measurement: **~210 tokens**, and the base never grows again. Project it forward — this is the arithmetic the whole chapter stands on:
+Re-run the token measurement: **~210 tokens**, and the base never grows again. Project it forward and the trade becomes obvious:
 
 | Failure classes covered | Scrapbook (always resident) | Router (base + catalog) |
 |---|---|---|
@@ -569,7 +569,7 @@ Exit code 2 + a panic naming an env var → the procedure should send the model 
 just ch1 ask "the shop frontend is down, pods are crashing. Find the root cause." info
 ```
 
-The audit should show `read_skill("crashloop")`, then `describe`/`logs --previous`, then a verdict naming the missing `PRODUCT_CATALOG_SERVICE_ADDR`. **You wrote zero Python.** If it mis-routes, the fix is almost always the `description` line — sharpen it, restart, re-run. Tuning a one-line description beats tuning a 35-line prompt; that asymmetry is the whole chapter.
+The audit should show `read_skill("crashloop")`, then `describe`/`logs --previous`, then a verdict naming the missing `PRODUCT_CATALOG_SERVICE_ADDR`. **You wrote zero Python.** If it mis-routes, the fix is almost always the `description` line — sharpen it, restart, re-run. Tuning a one-line description beats tuning a 35-line prompt, every time you'll ever do it.
 
 Heal: `kubectl -n shop set env deploy/frontend PRODUCT_CATALOG_SERVICE_ADDR=productcatalogservice:3550`
 
@@ -625,7 +625,7 @@ You injected your own agent through a file in your own home directory. Now imagi
 
 - **No-skill fallback** — the router base already mandates the `VERDICT: no procedure matched` shape. If your model still fabricates on Attack 1, tighten that wording — but don't add routing rules to the base. Fix routing by writing the *missing skill* if the failure class is real, or by accepting the honest verdict if it isn't.
 - **Skill source control** — `read_skill` already refuses paths (checkpoint 3 proved it). Go further: never load a "skill" from tool output — a log line claiming to be a skill is Attack 2 wearing a costume. Stronger still: sign your skills (`cosign`, or a checked-in SHA list) and refuse anything unsigned. Honest framing: this is content *control*, not content *security* — the model still reads instructions inside skills it loads, as Attack 2 just proved. Real privilege separation waits for Ch8. Write `# TODO(ch8)` and move on.
-- **Forward pointer to Ch3** — even with skills, one noisy tool call can still flood context. Your Ch1 clamp is a blunt instrument; result-size gates and per-tool budgets are next chapter's centerpiece.
+- **Forward pointer to Ch3** — even with skills, one noisy tool call can still flood context. Your Ch1 clamp is a blunt instrument; result-size gates and per-tool budgets are where [Ch3](/ch03-cicd/) picks up.
 
 ## Belt test
 
