@@ -13,8 +13,10 @@ What's here:
 - `Justfile` — ships with `check` and `ask`; the chaos/heal recipes are a chapter side
   quest the learner fills in. Rule of the dojo: chaos you can't cleanly revert is chaos
   you shouldn't inject.
-- `skills/` — appears when the learner does the version-your-skills side quest (masters
-  of `~/.budo/skills/*.md`: `env-typo.md`, `crashloop.md`, plus their belt-test skill).
+- `skills/` — the reference library: the top-10 SRE runbooks in SKILL.md form, plus a
+  README on routing design. **Spoiler warnings apply** — `crashloop.md` is the level-5
+  answer key and `endpoints-empty.md` defuses Attack 1's no-skill test; see
+  `skills/README.md` before copying wholesale.
 
 The chaos commands, for reference (inject / heal):
 

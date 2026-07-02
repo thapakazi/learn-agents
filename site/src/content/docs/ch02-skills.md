@@ -377,7 +377,7 @@ LEVEL 3 CLEAR 🥋
 
 **Why those last two checks matter:** the wrong-name case returns a *helpful* error naming what exists — Ch1's errors-are-prompts rule on a new tool. And the traversal check is your first taste of treating the model as an untrusted caller: `read_skill("../../etc/passwd")` must go nowhere, because tool arguments come from the same place log text does.
 
-**🎯 Side quest — version your skills.** `~/.budo/skills/` is runtime state; it dies with your laptop. Keep masters in the repo under `labs/ch02-skills/skills/` and copy them in. By the belt test you'll have three worth keeping.
+**🎯 Side quest — version your skills.** `~/.budo/skills/` is runtime state; it dies with your laptop. Keep masters in the repo under `labs/ch02-skills/skills/` and copy them in. That directory also holds a **reference library of ten SRE runbooks** (imagepullbackoff, oomkilled, pending-pod, probe-failure, dns-failure, rollout-stuck, endpoints-empty, service-topology...) with a README on how their catalog descriptions partition the symptom space — but read its spoiler warnings first: two of those files are answer keys for exercises you haven't hit yet.
 
 ## Level 4 — burn the scrapbook
 
