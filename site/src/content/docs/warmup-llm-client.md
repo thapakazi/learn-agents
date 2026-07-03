@@ -251,7 +251,7 @@ which is your context window growing in real time. Two knobs, both env vars, bot
 - **`BUDO_PRICE_IN` / `BUDO_PRICE_OUT`** — dollars per million tokens. Set them to a hosted
   model's rates and the footer prices every local run as if it ran there. A run that's free
   on your laptop but would cost $0.40 hosted is worth knowing about *before* you deploy.
-- **`BUDO_OBS=logfire`** — the tracing addon (`pip install logfire`). Every provider HTTP
+- **`BUDO_OBS=logfire`** — the tracing addon (`just -f labs/ch00-dojo/Justfile deps-obs`, or `pip install logfire`). Every provider HTTP
   call becomes an OpenTelemetry span: with `LOGFIRE_TOKEN` set they land in Logfire's UI;
   with `OTEL_EXPORTER_OTLP_ENDPOINT` set they go to any OTel backend you run; with neither
   they render in your console. Unset, or package missing, it's a clean no-op — the meter

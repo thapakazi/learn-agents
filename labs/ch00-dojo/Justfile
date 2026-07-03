@@ -7,9 +7,19 @@ shop_manifest := "https://raw.githubusercontent.com/GoogleCloudPlatform/microser
 default:
     @just --list
 
-# Bring up everything: cluster + shop + observability + models
-up: cluster shop observability models smoke
+# Bring up everything: cluster + shop + observability + models + python deps
+up: cluster shop observability models deps smoke
     @echo "🥋 The dojo is open."
+
+# 5. Python side: install budo (editable) — brings httpx, the only hard dep
+deps:
+    python3 -m pip install -e ../../budo
+    @echo "✓ budo installed (editable). Optional tracing addon: just deps-obs"
+
+# Optional: the observability addon (logfire — OpenTelemetry spans per LLM call)
+deps-obs:
+    python3 -m pip install -e '../../budo[obs]'
+    @echo "✓ logfire installed. Enable per-run with: export BUDO_OBS=logfire"
 
 # 1. kind cluster (1 control-plane, 2 workers)
 cluster:
