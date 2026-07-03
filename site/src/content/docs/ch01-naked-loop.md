@@ -385,8 +385,11 @@ EVIDENCE:
   - describe deployment checkoutservice: PAYMENT_SERVICE_ADDR=paymetnservce:50051
 SUGGESTED FIX: kubectl -n shop set env deployment/checkoutservice PAYMENT_SERVICE_ADDR=paymentservice:50051
 
+⏱  6 llm calls · 148.9s in-model · 11,482 in / 903 out tok · $0 local (BUDO_PRICE_IN/OUT to price it)
 📜 audit: ~/.budo/audit/1751347205-logs.jsonl
 ```
+
+That footer is the session meter (built in the warm-up's tree; `budo/core/usage.py`). The `in` number is every token the model read across the whole investigation — and at debug level, the `» usage: ctx ... tok` line on each call shows your context window growing turn by turn. Keep half an eye on it; it becomes the whole story in a minute.
 
 **Why that worked — walk the moves with me,** because there's more autonomy in this trace than first appears:
 
@@ -492,7 +495,7 @@ What breaks depends on your serving stack, and each failure is instructive:
 - **A hard error** — the request exceeds the server's context length and you get an HTTP 500. Loud, at least.
 - **Silent truncation** — the nasty one. Ollama's default context window is small (4096 tokens unless you raise `num_ctx` / `OLLAMA_CONTEXT_LENGTH`), and when the conversation exceeds it, Ollama **silently drops the oldest tokens first**. The oldest tokens are your *system prompt*. The agent doesn't crash — it forgets who it is, forgets the question, and starts summarizing shopping traffic like a cheerful intern.
 
-400KB is roughly 100k tokens against a 32k window at best. This is not a corner case; it's arithmetic.
+400KB is roughly 100k tokens against a 32k window at best. This is not a corner case; it's arithmetic — and it's no longer abstract arithmetic, because the `» usage: ctx ...` lines in your debug trace show the exact moment the number goes vertical.
 
 > 🥋 **Budo says:** the loudest failures are the kind ones. The quiet ones write the postmortems.
 

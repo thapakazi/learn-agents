@@ -8,9 +8,10 @@ import argparse
 import sys
 
 from budo import __version__
-from budo.core import log
+from budo.core import log, obs
 from budo.core.audit import Audit
 from budo.core.loop import Agent
+from budo.core.usage import METER
 from budo.tools.k8s import K8S_TOOLS
 
 LOGS_SYSTEM = """You are budo, a senior SRE investigating a kubernetes incident.
@@ -58,7 +59,8 @@ def approve(action: str) -> bool:
 def cmd_logs(args: argparse.Namespace) -> int:
     agent = Agent(system=LOGS_SYSTEM, tools=K8S_TOOLS, audit=Audit("logs"), approve=approve)
     print(agent.run(args.question))
-    print(f"\n📜 audit: {agent.audit.path}", file=sys.stderr)
+    print(f"\n{METER.summary()}", file=sys.stderr)
+    print(f"📜 audit: {agent.audit.path}", file=sys.stderr)
     return 0
 
 
@@ -76,6 +78,7 @@ def main() -> int:
     args = p.parse_args()
     if args.log_level:
         log.set_level(args.log_level)
+    obs.init()  # optional tracing addon — no-op unless BUDO_OBS is set
     return args.fn(args)
 
 

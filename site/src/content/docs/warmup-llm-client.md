@@ -222,6 +222,46 @@ If the model is tool-capable (`qwen2.5:14b` is), `msg` looks like:
 
 `arguments` is a string. Parsing it is the next function.
 
+### The meter — the bill rides on every response
+
+Before moving on, scroll back through the raw JSON your endpoint returned (or re-run the
+Step 1 `curl`). There's a block you probably skimmed past:
+
+```json
+"usage": {"prompt_tokens": 27, "completion_tokens": 12, "total_tokens": 39}
+```
+
+Every OpenAI-compatible endpoint — Ollama included — reports this on every single response.
+`prompt_tokens` is everything the model just *read* (your whole messages array plus tool
+specs — in an agent loop, this is your live context size). `completion_tokens` is what it
+*generated*. Hosted providers bill you on exactly these two numbers; Ollama charges watts
+and patience instead, but the arithmetic is identical.
+
+The budo tree reads this block for you: the in-tree provider times each call and feeds a
+tiny session meter, `budo/core/usage.py` (~50 lines — go read it, it's the whole mechanism).
+From Ch1 on, every run ends with:
+
+```
+⏱  6 llm calls · 143.2s in-model · 11,482 in / 903 out tok · $0 local (BUDO_PRICE_IN/OUT to price it)
+```
+
+…and at debug level you get one line per call — `» usage: ctx 1,842 tok · +156 out · 4.2s` —
+which is your context window growing in real time. Two knobs, both env vars, both optional:
+
+- **`BUDO_PRICE_IN` / `BUDO_PRICE_OUT`** — dollars per million tokens. Set them to a hosted
+  model's rates and the footer prices every local run as if it ran there. A run that's free
+  on your laptop but would cost $0.40 hosted is worth knowing about *before* you deploy.
+- **`BUDO_OBS=logfire`** — the tracing addon (`pip install logfire`). Every provider HTTP
+  call becomes an OpenTelemetry span: with `LOGFIRE_TOKEN` set they land in Logfire's UI;
+  with `OTEL_EXPORTER_OTLP_ENDPOINT` set they go to any OTel backend you run; with neither
+  they render in your console. Unset, or package missing, it's a clean no-op — the meter
+  above works regardless. (This is the same pattern the big agent CLIs use: usage-block
+  metering built in, exporters optional.)
+
+You don't need to add anything to *your* `provider_skeleton.py` — the meter lives in the
+tree and hooks in when your file lands there (Step 6). Just know where the numbers come
+from: not a framework, not an estimate. The response itself.
+
 ### Step 4 — Write `parse_tool_args()`
 
 Local 14B models are *mostly* good at JSON. *Mostly* is not good enough. The three things they do:

@@ -467,6 +467,8 @@ Re-run the token measurement: **~210 tokens**, and the base never grows again. P
 
 The router pays one extra cost — a skill body (~300–500 tokens) — but only in runs that need it. The scrapbook charges every run for every rule, and spends the model's *attention* along with the tokens.
 
+And none of this has to stay theoretical: the session meter prices the claim. Compare the footer's `in` tokens for this fight against any Ch1 run of the same chaos — the router's discount is in every call's `ctx` number. Set `BUDO_PRICE_IN`/`BUDO_PRICE_OUT` to a hosted model's rates and the savings print in dollars.
+
 **Then the fight** — Ch1's chaos, routed through a skill this time:
 
 ```bash
