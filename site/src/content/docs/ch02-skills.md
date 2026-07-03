@@ -24,6 +24,8 @@ The path:
 
 Same rhythm as Ch1: **Goal → Edit → Run → You should see → Why that worked → Checkpoint**, with `just ch2 check <level>` as the offline green light (fake fixtures — no cluster, no model needed). Every chaos in this chapter is a plain `kubectl` one-liner that runs against the Ch0 lab today; wrapping them in a Justfile is a side quest *you* complete.
 
+The cheat codes carry over too, with one caveat: Ch1's solver could swap single functions, but this chapter has you *create* files, so `just ch2 solve <n>` installs complete solved versions of `tools/k8s.py` and `__main__.py` (Ch1 solutions included, backups taken) rather than patching around your edits. Levels 1–2 install the findings, 3–4 add the skill loader and router, 5 adds the answer-key skill. Great for jumping straight to the router demo; rough on a half-finished attempt — `git diff budo/` before you trust the result.
+
 Time: ~2 hours. Hardware: same as Ch1. **Prerequisite:** your Ch1 agent passes its checkpoints (`just ch1 check 4` is green).
 
 ---
@@ -161,6 +163,8 @@ LEVEL 1 CLEAR 🥋
 
 Note which checks matter most: the *negative* ones. A finding that cries wolf gets ignored by turn three, same as a noisy pager.
 
+*(Cheat code: `just ch2 solve 1`.)*
+
 **Then the rematch** — chaos still burning from level 0:
 
 ```bash
@@ -232,6 +236,8 @@ just ch2 check 2
 
 LEVEL 2 CLEAR 🥋
 ```
+
+*(Cheat code: `just ch2 solve 2`.)*
 
 **Why that matters:** findings are unit-testable *because they're code* — you just verified cluster-diagnosis logic in milliseconds, offline, with no model involved. Try unit-testing a prompt rule.
 
@@ -375,6 +381,8 @@ just ch2 check 3
 LEVEL 3 CLEAR 🥋
 ```
 
+*(Cheat code: `just ch2 solve 3` — installs the loader, the router, and `env-typo.md` together; they only make sense as a set.)*
+
 **Why those last two checks matter:** the wrong-name case returns a *helpful* error naming what exists — Ch1's errors-are-prompts rule on a new tool. And the traversal check is your first taste of treating the model as an untrusted caller: `read_skill("../../etc/passwd")` must go nowhere, because tool arguments come from the same place log text does.
 
 **🎯 Side quest — version your skills.** `~/.budo/skills/` is runtime state; it dies with your laptop. Keep masters in the repo under `labs/ch02-skills/skills/` and copy them in. That directory also holds a **reference library of ten SRE runbooks** (imagepullbackoff, oomkilled, pending-pod, probe-failure, dns-failure, rollout-stuck, endpoints-empty, service-topology...) with a README on how their catalog descriptions partition the symptom space — but read its spoiler warnings first: two of those files are answer keys for exercises you haven't hit yet.
@@ -446,6 +454,8 @@ just ch2 check 4
 
 LEVEL 4 CLEAR 🥋
 ```
+
+*(Cheat code: `just ch2 solve 4`.)*
 
 Re-run the token measurement: **~210 tokens**, and the base never grows again. Project it forward and the trade becomes obvious:
 
@@ -568,6 +578,8 @@ Exit code 2 + a panic naming an env var → the procedure should send the model 
 ```bash
 just ch1 ask "the shop frontend is down, pods are crashing. Find the root cause." info
 ```
+
+*(There is a `just ch2 solve 5`, and it installs a finished `crashloop.md`. But this level is twenty minutes of writing markdown, and it's the one that proves you can do this without us. Solve is for re-runs.)*
 
 The audit should show `read_skill("crashloop")`, then `describe`/`logs --previous`, then a verdict naming the missing `PRODUCT_CATALOG_SERVICE_ADDR`. **You wrote zero Python.** If it mis-routes, the fix is almost always the `description` line — sharpen it, restart, re-run. Tuning a one-line description beats tuning a 35-line prompt, every time you'll ever do it.
 

@@ -28,6 +28,8 @@ Every level has the same rhythm: **a goal, a bit of code, a run, what you should
 
 All commands run from the **repo root**; `just ch1 <recipe>` forwards into the Ch1 lab.
 
+One more thing, because real life has deadlines: every level also has a cheat code. `just ch1 solve <n>` writes that level's reference code into the live tree — surgically, replacing only the functions the level owns, with a backup of what was there — and re-runs the checkpoint. It's cumulative, so `solve 3` gets a fresh clone all the way to a running investigation. Use it to skip ahead, unbrick a broken attempt, or see a demo before committing an afternoon. Then come back and write the level yourself; the belt only counts if your fingers earned it.
+
 ---
 
 > *"Show me your agent," said the student, opening a framework's docs.*
@@ -213,6 +215,8 @@ just ch1 check 1
 LEVEL 1 CLEAR 🥋  On to the next.
 ```
 
+*(Truly stuck, or here to evaluate the course before committing? `just ch1 solve 1` writes the loop for you. This is the level most worth typing yourself, though.)*
+
 **Now for the moment you came for:**
 
 ```bash
@@ -299,6 +303,8 @@ just ch1 check 2
 LEVEL 2 CLEAR 🥋
 ```
 
+*(Cheat code: `just ch1 solve 2`.)*
+
 **Then re-run the incident:** `just ch1 demo`. The agent gets further now — events show cartservice probe noise (a red herring), `describe` works. But watch it stall at the crucial moment: it can see *configuration*, not *behavior*. Without logs it either blames the noisy-but-innocent cartservice or admits it can't find error evidence. Frustrating to watch — good. That frustration is the spec for the next tool.
 
 **Why that worked:** notice that you didn't tell the agent to use `get_events` — you just made it exist. Each tool you add changes what the model *chooses* to do, because the tool list rides along on every request (wire fact #2). You're not programming steps; you're widening a search space and letting the model plan inside it. That's also the warning: every tool you add is a capability you now have to think about. Which brings us to `logs`.
@@ -355,6 +361,8 @@ just ch1 check 3
   ...
 LEVEL 3 CLEAR 🥋
 ```
+
+*(Cheat code: `just ch1 solve 3`.)*
 
 **Now the real run** — the chaos is still burning from level 2:
 
@@ -441,6 +449,8 @@ just ch1 check 4
 
 LEVEL 4 CLEAR 🥋
 ```
+
+*(Cheat code: `just ch1 solve 4` — though if you wrote level 1 yourself, the armor is a fifteen-minute add worth doing by hand.)*
 
 **Now see the gate live** — ask for something destructive and watch the run *pause on your terminal*:
 
@@ -529,6 +539,8 @@ just ch1 check 5
 
 LEVEL 5 CLEAR 🥋
 ```
+
+*(`just ch1 solve 5` prints the clamp ready to paste — it can't guess where your `run()` wants it.)*
 
 **Injection:** wrap tool results in delimiters so the model at least has a fence line to respect:
 

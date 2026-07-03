@@ -8,6 +8,10 @@ default:
 check n:
     @python3 checks/check.py {{n}}
 
+# Cheat code: install the solved files for level N (coarse — see checks/solve.py)
+solve n:
+    @python3 checks/solve.py {{n}}
+
 # Run YOUR agent against the shop (same live tree as Ch1)
 ask question level="info":
     cd ../../budo && PYTHONPATH=. python3 -m budo --log-level {{level}} logs "{{question}}"
