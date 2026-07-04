@@ -35,25 +35,25 @@ def get_pods(namespace: str) -> str:
 
 # ─── you write these ──────────────────────────────────────────────────
 def get_events(namespace: str) -> str:
-    # TODO(you): kubectl get events -n <namespace> --sort-by=.lastTimestamp
-    raise NotImplementedError("write get_events() — Ch1 step 5")
+    # TODO(you, level 2): kubectl get events -n <namespace> --sort-by=.lastTimestamp
+    raise NotImplementedError("write get_events() — Ch1 level 2")
 
 
 def describe(namespace: str, kind: str, name: str) -> str:
-    # TODO(you): kubectl describe <kind> <name> -n <namespace>
-    raise NotImplementedError("write describe() — Ch1 step 5")
+    # TODO(you, level 2): kubectl describe <kind> <name> -n <namespace>
+    raise NotImplementedError("write describe() — Ch1 level 2")
 
 
 def delete_pod(namespace: str, pod: str) -> str:
     """MUTATING — gated by the approval callback in the loop. The flag is the lesson."""
-    # TODO(you): kubectl delete pod <pod> -n <namespace>
-    raise NotImplementedError("write delete_pod() — Ch1 step 5")
+    # TODO(you, level 2): kubectl delete pod <pod> -n <namespace>
+    raise NotImplementedError("write delete_pod() — Ch1 level 2")
 
 
 def logs(namespace: str, pod: str, container: str = "", tail: int = DEFAULT_TAIL,
          previous: bool = False, since: str = "", grep: str = "") -> str:
     """Tail logs from a pod, with hard caps and an optional server-side grep."""
-    # TODO(you): the dangerous one. Steps:
+    # TODO(you, level 3): the dangerous one. Steps:
     #   1. base args: ["-n", namespace, "logs", pod, f"--tail={min(int(tail), 1000)}"]
     #      The min(..., 1000) is non-negotiable — context flooding is the #1 way agents die.
     #   2. optional flags: container (-c), previous (--previous), since (--since=<dur>)
@@ -66,7 +66,7 @@ def logs(namespace: str, pod: str, container: str = "", tail: int = DEFAULT_TAIL
     #      filter lines, return matched lines with a one-line header like
     #      "# matched N of M lines (grep=...)". If 0 matched, say so explicitly so the
     #      model knows to widen the pattern.
-    raise NotImplementedError("write logs() — Ch1 step 6")
+    raise NotImplementedError("write logs() — Ch1 level 3")
 
 
 # ─── tool specs (provided — the descriptions ARE prompts the model reads) ───

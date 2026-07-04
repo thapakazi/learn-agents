@@ -222,6 +222,50 @@ If the model is tool-capable (`qwen2.5:14b` is), `msg` looks like:
 
 `arguments` is a string. Parsing it is the next function.
 
+### The meter — the bill rides on every response
+
+Before moving on, scroll back through the raw JSON your endpoint returned (or re-run the
+Step 1 `curl`). There's a block you probably skimmed past:
+
+```json
+"usage": {"prompt_tokens": 27, "completion_tokens": 12, "total_tokens": 39}
+```
+
+Every OpenAI-compatible endpoint — Ollama included — reports this on every single response.
+`prompt_tokens` is everything the model just *read* (your whole messages array plus tool
+specs — in an agent loop, this is your live context size). `completion_tokens` is what it
+*generated*. Hosted providers bill you on exactly these two numbers; Ollama charges watts
+and patience instead, but the arithmetic is identical.
+
+The budo tree reads this block for you: the in-tree provider times each call and feeds a
+tiny session meter, `budo/core/usage.py` (~50 lines — go read it, it's the whole mechanism).
+From Ch1 on, every run ends with:
+
+```
+⏱  6 llm calls · 143.2s in-model · 11,482 in / 903 out tok · $0 local (BUDO_PRICE_IN/OUT to price it)
+```
+
+…and at debug level you get one line per call — `» usage: ctx 1,842 tok · +156 out · 4.2s` —
+which is your context window growing in real time. Two knobs, both env vars, both optional:
+
+- **`BUDO_PRICE_IN` / `BUDO_PRICE_OUT`** — dollars per million tokens. Set them to a hosted
+  model's rates and the footer prices every local run as if it ran there. A run that's free
+  on your laptop but would cost $0.40 hosted is worth knowing about *before* you deploy.
+- **`BUDO_OBS=phoenix`** — the tracing addon. Ch0's optional `just obs` deploys
+  [Phoenix](https://github.com/Arize-ai/phoenix), a single-container LLM trace debugger,
+  into your own cluster next to Prometheus and Loki (`just deps-obs` installs the
+  OpenTelemetry client side). With the `just phoenix` port-forward running, every LLM call
+  becomes a span — model, tokens in/out, latency — in a UI built for reading agent runs at
+  http://localhost:6006. It's standard OTLP: `BUDO_OBS=otlp` targets any OTel backend via
+  `OTEL_EXPORTER_OTLP_ENDPOINT`, `BUDO_OBS=console` prints spans with no server at all.
+  Unset, or packages missing, it's a clean no-op — the meter above works regardless.
+  (Same pattern the big agent CLIs use: usage-block metering built in, exporters optional.
+  Self-hosted, because the dojo owns its own data.)
+
+You don't need to add anything to *your* `provider_skeleton.py` — the meter lives in the
+tree and hooks in when your file lands there (Step 6). Just know where the numbers come
+from: not a framework, not an estimate. The response itself.
+
 ### Step 4 — Write `parse_tool_args()`
 
 Local 14B models are *mostly* good at JSON. *Mostly* is not good enough. The three things they do:

@@ -7,9 +7,29 @@ shop_manifest := "https://raw.githubusercontent.com/GoogleCloudPlatform/microser
 default:
     @just --list
 
-# Bring up everything: cluster + shop + observability + models
-up: cluster shop observability models smoke
+# Bring up everything: cluster + shop + observability + models + python deps
+up: cluster shop observability models deps smoke
     @echo "🥋 The dojo is open."
+
+# 5. Python side: install budo (editable) — brings httpx, the only hard dep
+deps:
+    python3 -m pip install -e ../../budo
+    @echo "✓ budo installed (editable). Optional tracing addon: just deps-obs"
+
+# Optional: the tracing addon (OpenTelemetry SDK + OTLP exporter)
+deps-obs:
+    python3 -m pip install -e '../../budo[obs]'
+    @echo "✓ OpenTelemetry installed. Deploy the backend with 'just obs', then: export BUDO_OBS=phoenix"
+
+# Optional: deploy Phoenix (self-hosted LLM trace debugger) into the cluster
+obs:
+    kubectl apply -f phoenix.yaml
+    kubectl -n monitoring rollout status deploy/phoenix --timeout=120s
+    @echo "✓ phoenix up. Port-forward with 'just phoenix', then open http://localhost:6006"
+
+# Port-forward the Phoenix UI + OTLP collector
+phoenix:
+    kubectl -n monitoring port-forward svc/phoenix 6006:6006
 
 # 1. kind cluster (1 control-plane, 2 workers)
 cluster:

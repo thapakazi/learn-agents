@@ -27,3 +27,11 @@ site-build:
 # Run the budo CLI (from Ch1 onward)
 budo *ARGS:
     cd budo && python -m budo {{ARGS}}
+
+# Ch1 lab commands: just ch1 <recipe> [args]   (e.g. just ch1 break, just ch1 check 1)
+ch1 *ARGS:
+    @just -f labs/ch01-naked-loop/Justfile {{ARGS}}
+
+# Ch2 lab commands: just ch2 <recipe> [args]
+ch2 *ARGS:
+    @just -f labs/ch02-skills/Justfile {{ARGS}}

@@ -20,7 +20,7 @@ The permanent lab for all ten chapters:
 - **Ollama** — local model host, with a tool-calling-capable model
 - A smoke test proving your local model can actually call tools
 
-One command: `just lab-up`.
+One command from the repo root: `just lab-up` (or `just up` from inside `labs/ch00-dojo/`).
 
 ## Prerequisites
 
@@ -78,7 +78,25 @@ just models
 
 Pulls `qwen2.5:14b` (primary) and `llama3.1:8b` (fallback). Ollama serves an OpenAI-compatible API at `http://localhost:11434/v1` — this is the only reason our from-scratch chapters need zero provider-specific code.
 
-### 5. Prove tool calling works
+### 5. The Python side
+
+```bash
+just deps
+```
+
+Installs `budo` — the CLI you'll build chapter by chapter — as an editable package. Its only hard dependency is `httpx`; the warm-up and every later chapter assume this step ran. (Prefer a venv or `uv`? Create/activate it first; the recipe is just `pip install -e ./budo` underneath.)
+
+Optional, and worth knowing exists: the tracing addon. Budo meters every run out of the box — tokens in/out, in-model seconds, cost — straight from the `usage` block on each LLM response; no install needed for that. The addon adds span-level traces in a UI, and like everything else in the dojo, the backend runs in *your* cluster:
+
+```bash
+just deps-obs          # client side: OpenTelemetry SDK + OTLP exporter
+just obs               # backend: Phoenix (single container) into namespace `monitoring`
+just phoenix           # port-forward the UI + collector → http://localhost:6006
+```
+
+Then any run with `BUDO_OBS=phoenix` set sends one span per LLM call — model, tokens in/out, latency — to Phoenix, whose UI is built specifically for reading agent runs. It's plain OTLP underneath: `BUDO_OBS=otlp` points at any OpenTelemetry backend (`OTEL_EXPORTER_OTLP_ENDPOINT`), and `BUDO_OBS=console` prints spans to stderr with no server at all. The [warm-up](/warmup-llm-client/) shows the meter up close; skip all of this now and nothing later breaks.
+
+### 6. Prove tool calling works
 
 This is the step most people skip and then lose a day to. Local models vary wildly in tool-calling quality; verify yours before writing an agent around it:
 
@@ -100,7 +118,7 @@ Now answer honestly: how long until *you* would notice? Restore it. Remember the
 
 ## Belt test
 
-- [ ] `just lab-up` from zero completes without manual intervention
+- [ ] `just lab-up` (from the repo root) completes from zero without manual intervention
 - [ ] `kubectl -n shop get pods` shows 12/12 Running
 - [ ] Grafana shows traffic on the frontend service (loadgenerator working)
 - [ ] `{job="shop/frontend"}` returns logs in Grafana → Explore → Loki

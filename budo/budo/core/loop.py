@@ -32,7 +32,7 @@ class Tool:
     def spec(self) -> dict:
         # TODO(you): return the OpenAI function-calling spec for this tool.
         # Shape: {"type": "function", "function": {"name", "description", "parameters"}}
-        raise NotImplementedError("write Tool.spec() — see Ch1 step 8")
+        raise NotImplementedError("write Tool.spec() — Ch1 level 1")
 
 
 @dataclass
@@ -44,17 +44,22 @@ class Agent:
     messages: list[dict] = field(default_factory=list)
 
     def run(self, user_msg: str) -> str:
-        # TODO(you): the loop. Decisions you must own:
+        # TODO(you) — built in two passes:
+        #
+        # LEVEL 1 — the minimum that runs:
         #   1. seed messages with system + user
         #   2. up to MAX_TURNS, call chat(messages, [t.spec() for t in self.tools])
         #   3. no tool_calls -> return the reply's content (done)
-        #   4. otherwise dispatch each tool_call:
-        #        - unknown tool name? return "error: ..." AS the tool result
-        #        - parse_tool_args raised? return "error: ..." AS the tool result
-        #        - tool function raised? catch and return "error: ..." AS the tool result
-        #        - tool.mutating? gate through self.approve(...) first
-        #   5. hit MAX_TURNS without an answer? return a "truncated" notice (don't raise)
+        #   4. otherwise run each tool_call, wrap tool.fn in try/except, and append
+        #      the result (or "error: <type>: <msg>") as a role="tool" message
+        #
+        # LEVEL 4 — the messy cases:
+        #   - unknown tool name? return "error: ..." AS the tool result
+        #   - parse_tool_args raised? return "error: ..." AS the tool result
+        #   - tool.mutating? gate through self.approve(...) BEFORE calling tool.fn
+        #   - hit MAX_TURNS without an answer? return a "truncated" notice (don't raise)
         #
         # Every tool call should be appended to self.audit so the run is replayable.
+        # Checkpoints: `just ch1 check 1` and `just ch1 check 4` (offline, no cluster).
         # Stuck? Open labs/ch01-naked-loop/starter/loop_hint.py.
-        raise NotImplementedError("write Agent.run() — see Ch1 steps 9-10")
+        raise NotImplementedError("write Agent.run() — Ch1 levels 1 and 4")
