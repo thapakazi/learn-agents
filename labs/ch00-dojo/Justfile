@@ -16,10 +16,20 @@ deps:
     python3 -m pip install -e ../../budo
     @echo "✓ budo installed (editable). Optional tracing addon: just deps-obs"
 
-# Optional: the observability addon (logfire — OpenTelemetry spans per LLM call)
+# Optional: the tracing addon (OpenTelemetry SDK + OTLP exporter)
 deps-obs:
     python3 -m pip install -e '../../budo[obs]'
-    @echo "✓ logfire installed. Enable per-run with: export BUDO_OBS=logfire"
+    @echo "✓ OpenTelemetry installed. Deploy the backend with 'just obs', then: export BUDO_OBS=phoenix"
+
+# Optional: deploy Phoenix (self-hosted LLM trace debugger) into the cluster
+obs:
+    kubectl apply -f phoenix.yaml
+    kubectl -n monitoring rollout status deploy/phoenix --timeout=120s
+    @echo "✓ phoenix up. Port-forward with 'just phoenix', then open http://localhost:6006"
+
+# Port-forward the Phoenix UI + OTLP collector
+phoenix:
+    kubectl -n monitoring port-forward svc/phoenix 6006:6006
 
 # 1. kind cluster (1 control-plane, 2 workers)
 cluster:

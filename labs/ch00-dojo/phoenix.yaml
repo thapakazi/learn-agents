@@ -1,0 +1,49 @@
+# Phoenix (arize-ai/phoenix) — self-hosted LLM trace debugger for the dojo.
+# One container: UI + OTLP HTTP collector on 6006, OTLP gRPC on 4317.
+# Storage is SQLite on an emptyDir — traces die with the pod, which is
+# exactly the durability a destroyable lab deserves.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: phoenix
+  namespace: monitoring
+  labels: { app: phoenix }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: phoenix }
+  template:
+    metadata:
+      labels: { app: phoenix }
+    spec:
+      containers:
+        - name: phoenix
+          image: arizephoenix/phoenix:latest  # pin a tag if you want reproducible labs
+          ports:
+            - { containerPort: 6006, name: ui-otlp-http }
+            - { containerPort: 4317, name: otlp-grpc }
+          env:
+            - { name: PHOENIX_WORKING_DIR, value: /data }
+          volumeMounts:
+            - { name: data, mountPath: /data }
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: "1", memory: 1Gi }
+          readinessProbe:
+            httpGet: { path: /, port: 6006 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - { name: data, emptyDir: {} }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: phoenix
+  namespace: monitoring
+  labels: { app: phoenix }
+spec:
+  selector: { app: phoenix }
+  ports:
+    - { name: ui-otlp-http, port: 6006, targetPort: 6006 }
+    - { name: otlp-grpc, port: 4317, targetPort: 4317 }

@@ -14,7 +14,7 @@ pricing a local run against a hosted model is a useful habit:
 
     export BUDO_PRICE_IN=3.00 BUDO_PRICE_OUT=15.00   # $/Mtok, e.g. a hosted mid-tier
 
-For traces (spans per LLM call in a real UI), see core/obs.py — BUDO_OBS=logfire.
+For traces (spans per LLM call in a real UI), see core/obs.py — BUDO_OBS=phoenix.
 """
 from __future__ import annotations
 

@@ -251,12 +251,16 @@ which is your context window growing in real time. Two knobs, both env vars, bot
 - **`BUDO_PRICE_IN` / `BUDO_PRICE_OUT`** — dollars per million tokens. Set them to a hosted
   model's rates and the footer prices every local run as if it ran there. A run that's free
   on your laptop but would cost $0.40 hosted is worth knowing about *before* you deploy.
-- **`BUDO_OBS=logfire`** — the tracing addon (`just -f labs/ch00-dojo/Justfile deps-obs`, or `pip install logfire`). Every provider HTTP
-  call becomes an OpenTelemetry span: with `LOGFIRE_TOKEN` set they land in Logfire's UI;
-  with `OTEL_EXPORTER_OTLP_ENDPOINT` set they go to any OTel backend you run; with neither
-  they render in your console. Unset, or package missing, it's a clean no-op — the meter
-  above works regardless. (This is the same pattern the big agent CLIs use: usage-block
-  metering built in, exporters optional.)
+- **`BUDO_OBS=phoenix`** — the tracing addon. Ch0's optional `just obs` deploys
+  [Phoenix](https://github.com/Arize-ai/phoenix), a single-container LLM trace debugger,
+  into your own cluster next to Prometheus and Loki (`just deps-obs` installs the
+  OpenTelemetry client side). With the `just phoenix` port-forward running, every LLM call
+  becomes a span — model, tokens in/out, latency — in a UI built for reading agent runs at
+  http://localhost:6006. It's standard OTLP: `BUDO_OBS=otlp` targets any OTel backend via
+  `OTEL_EXPORTER_OTLP_ENDPOINT`, `BUDO_OBS=console` prints spans with no server at all.
+  Unset, or packages missing, it's a clean no-op — the meter above works regardless.
+  (Same pattern the big agent CLIs use: usage-block metering built in, exporters optional.
+  Self-hosted, because the dojo owns its own data.)
 
 You don't need to add anything to *your* `provider_skeleton.py` — the meter lives in the
 tree and hooks in when your file lands there (Step 6). Just know where the numbers come

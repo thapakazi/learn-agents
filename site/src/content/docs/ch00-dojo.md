@@ -86,13 +86,15 @@ just deps
 
 Installs `budo` — the CLI you'll build chapter by chapter — as an editable package. Its only hard dependency is `httpx`; the warm-up and every later chapter assume this step ran. (Prefer a venv or `uv`? Create/activate it first; the recipe is just `pip install -e ./budo` underneath.)
 
-Optional, and worth knowing exists: the observability addon.
+Optional, and worth knowing exists: the tracing addon. Budo meters every run out of the box — tokens in/out, in-model seconds, cost — straight from the `usage` block on each LLM response; no install needed for that. The addon adds span-level traces in a UI, and like everything else in the dojo, the backend runs in *your* cluster:
 
 ```bash
-just deps-obs          # adds logfire (OpenTelemetry)
+just deps-obs          # client side: OpenTelemetry SDK + OTLP exporter
+just obs               # backend: Phoenix (single container) into namespace `monitoring`
+just phoenix           # port-forward the UI + collector → http://localhost:6006
 ```
 
-Budo meters every run out of the box — tokens in/out, in-model seconds, cost — straight from the `usage` block on each LLM response; no install needed for that. `deps-obs` adds the tracing layer on top: set `BUDO_OBS=logfire` and every LLM HTTP call becomes an OpenTelemetry span — in your console by default, in Logfire's UI if `LOGFIRE_TOKEN` is set, or at any OTLP endpoint via `OTEL_EXPORTER_OTLP_ENDPOINT`. The [warm-up](/warmup-llm-client/) shows the meter up close; skip the addon now and nothing later breaks.
+Then any run with `BUDO_OBS=phoenix` set sends one span per LLM call — model, tokens in/out, latency — to Phoenix, whose UI is built specifically for reading agent runs. It's plain OTLP underneath: `BUDO_OBS=otlp` points at any OpenTelemetry backend (`OTEL_EXPORTER_OTLP_ENDPOINT`), and `BUDO_OBS=console` prints spans to stderr with no server at all. The [warm-up](/warmup-llm-client/) shows the meter up close; skip all of this now and nothing later breaks.
 
 ### 6. Prove tool calling works
 

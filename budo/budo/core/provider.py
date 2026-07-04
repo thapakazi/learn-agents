@@ -13,7 +13,7 @@ from typing import Any
 
 import httpx
 
-from . import log
+from . import log, obs
 from .usage import METER
 
 BASE_URL = os.environ.get("OPENAI_BASE_URL", "http://localhost:11434/v1")
@@ -28,17 +28,19 @@ def chat(messages: list[dict[str, Any]], tools: list[dict] | None = None,
     if tools:
         body["tools"] = tools
     log.trace(f"POST {BASE_URL}/chat/completions", body)
-    t0 = time.monotonic()
-    r = httpx.post(
-        f"{BASE_URL}/chat/completions",
-        json=body,
-        headers={"Authorization": f"Bearer {API_KEY}"},
-        timeout=300,
-    )
-    r.raise_for_status()
-    raw = r.json()
+    with obs.llm_span(MODEL) as span:  # no-op unless BUDO_OBS is set
+        t0 = time.monotonic()
+        r = httpx.post(
+            f"{BASE_URL}/chat/completions",
+            json=body,
+            headers={"Authorization": f"Bearer {API_KEY}"},
+            timeout=300,
+        )
+        r.raise_for_status()
+        raw = r.json()
+        seconds = time.monotonic() - t0
+        obs.set_usage(span, raw.get("usage"))
     log.trace("raw response", raw)
-    seconds = time.monotonic() - t0
     METER.record(raw.get("usage"), seconds)  # the bill rides on every response
     log.debug(METER.call_line(seconds))
     return raw["choices"][0]["message"]
